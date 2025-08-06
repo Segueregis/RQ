@@ -113,13 +113,6 @@ const Login: React.FC = () => {
               </Link>
             </span>
           </div>
-
-          <div className="mt-6 p-4 bg-blue-50 rounded-md">
-            <p className="text-sm text-blue-800 font-medium mb-2">Contas de teste:</p>
-            <div className="text-xs text-blue-700 space-y-1">
-              <div><strong>Administrador:</strong> regis_etep@outlook.com / Bemvindo22*</div>
-            </div>
-          </div>
         </form>
       </div>
     </div>
