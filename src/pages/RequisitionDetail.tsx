@@ -8,28 +8,84 @@ import { Requisition } from '../types';
 const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRequisition, markAsDelivered } = useRequisitions();
+  const { getRequisition, updateRequisition, markAsDelivered } = useRequisitions();
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [notaFiscal, setNotaFiscal] = useState('');
-  const [oc, setOc] = useState('');
+  const [isDeliveryEditing, setIsDeliveryEditing] = useState(false);
+  
+  // Campos editáveis
+  const [editData, setEditData] = useState({
+    rq: '',
+    valorTotal: 0,
+    numeroOS: '',
+    descricao: '',
+    local: '',
+    fornecedor: '',
+    notaFiscal: '',
+    oc: ''
+  });
 
   useEffect(() => {
     if (id) {
       const req = getRequisition(id);
       if (req) {
         setRequisition(req);
-        setNotaFiscal(req.notaFiscal || '');
-        setOc(req.oc || '');
+        setEditData({
+          rq: req.rq,
+          valorTotal: req.valorTotal,
+          numeroOS: req.numeroOS,
+          descricao: req.descricao,
+          local: req.local,
+          fornecedor: req.fornecedor,
+          notaFiscal: req.notaFiscal || '',
+          oc: req.oc || ''
+        });
       }
     }
   }, [id, getRequisition]);
 
+  const handleSave = () => {
+    if (requisition) {
+      updateRequisition(requisition.id, {
+        ...editData,
+        valorTotal: Number(editData.valorTotal)
+      });
+      setRequisition({
+        ...requisition,
+        ...editData,
+        valorTotal: Number(editData.valorTotal)
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (requisition) {
+      setEditData({
+        rq: requisition.rq,
+        valorTotal: requisition.valorTotal,
+        numeroOS: requisition.numeroOS,
+        descricao: requisition.descricao,
+        local: requisition.local,
+        fornecedor: requisition.fornecedor,
+        notaFiscal: requisition.notaFiscal || '',
+        oc: requisition.oc || ''
+      });
+    }
+    setIsEditing(false);
+    setIsDeliveryEditing(false);
+  };
+
   const handleMarkAsDelivered = () => {
     if (requisition) {
-      markAsDelivered(requisition.id, notaFiscal, oc);
-      setRequisition({ ...requisition, status: 'entregue', notaFiscal, oc });
-      setIsEditing(false);
+      markAsDelivered(requisition.id, editData.notaFiscal, editData.oc);
+      setRequisition({ 
+        ...requisition, 
+        status: 'entregue', 
+        notaFiscal: editData.notaFiscal, 
+        oc: editData.oc 
+      });
+      setIsDeliveryEditing(false);
     }
   };
 
@@ -94,8 +150,38 @@ const RequisitionDetail: React.FC = () => {
         </div>
 
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900">Detalhes da Requisição</h2>
+            {requisition.status === 'pendente' && (
+              <div className="flex space-x-2">
+                {!isEditing ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span>Editar RQ</span>
+                  </button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleCancel}
+                      className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>Cancelar</span>
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Save className="h-4 w-4" />
+                      <span>Salvar</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="p-6">
@@ -104,44 +190,105 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   RQ
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.rq}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.rq}
+                    onChange={(e) => setEditData({ ...editData, rq: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Número da RQ"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.rq}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Valor Total
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                  {formatCurrency(requisition.valorTotal)}
-                </p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editData.valorTotal}
+                    onChange={(e) => setEditData({ ...editData, valorTotal: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                    {formatCurrency(requisition.valorTotal)}
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Número da OS
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.numeroOS}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.numeroOS}
+                    onChange={(e) => setEditData({ ...editData, numeroOS: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Número da OS"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.numeroOS}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Local
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.local}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.local}
+                    onChange={(e) => setEditData({ ...editData, local: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Local"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.local}</p>
+                )}
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descrição
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.descricao}</p>
+                {isEditing ? (
+                  <textarea
+                    value={editData.descricao}
+                    onChange={(e) => setEditData({ ...editData, descricao: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Descrição da requisição"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.descricao}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fornecedor
                 </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.fornecedor}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.fornecedor}
+                    onChange={(e) => setEditData({ ...editData, fornecedor: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Fornecedor"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.fornecedor}</p>
+                )}
               </div>
 
               <div>
@@ -153,17 +300,16 @@ const RequisitionDetail: React.FC = () => {
                 </p>
               </div>
 
-              {/* Campos adicionais para entrega */}
+              {/* Campos de entrega */}
               <div>
-                <label htmlFor="notaFiscal" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nota Fiscal (NF)
                 </label>
-                {isEditing ? (
+                {(isEditing || isDeliveryEditing) ? (
                   <input
                     type="text"
-                    id="notaFiscal"
-                    value={notaFiscal}
-                    onChange={(e) => setNotaFiscal(e.target.value)}
+                    value={editData.notaFiscal}
+                    onChange={(e) => setEditData({ ...editData, notaFiscal: e.target.value })}
                     maxLength={10}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Ex: NF123456"
@@ -176,15 +322,14 @@ const RequisitionDetail: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="oc" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   OC
                 </label>
-                {isEditing ? (
+                {(isEditing || isDeliveryEditing) ? (
                   <input
                     type="text"
-                    id="oc"
-                    value={oc}
-                    onChange={(e) => setOc(e.target.value)}
+                    value={editData.oc}
+                    onChange={(e) => setEditData({ ...editData, oc: e.target.value })}
                     maxLength={10}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Ex: OC789012"
@@ -215,26 +360,22 @@ const RequisitionDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Ações */}
+            {/* Ações de entrega */}
             <div className="mt-8 flex justify-end space-x-3">
-              {requisition.status === 'pendente' && (
+              {requisition.status === 'pendente' && !isEditing && (
                 <>
-                  {!isEditing ? (
+                  {!isDeliveryEditing ? (
                     <button
-                      onClick={() => setIsEditing(true)}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      onClick={() => setIsDeliveryEditing(true)}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
-                      <Edit2 className="h-4 w-4" />
-                      <span>Editar para Entrega</span>
+                      <Check className="h-4 w-4" />
+                      <span>Marcar como Entregue</span>
                     </button>
                   ) : (
                     <>
                       <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setNotaFiscal(requisition.notaFiscal || '');
-                          setOc(requisition.oc || '');
-                        }}
+                        onClick={handleCancel}
                         className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         <X className="h-4 w-4" />
@@ -245,7 +386,7 @@ const RequisitionDetail: React.FC = () => {
                         className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                       >
                         <Check className="h-4 w-4" />
-                        <span>Marcar como Entregue</span>
+                        <span>Confirmar Entrega</span>
                       </button>
                     </>
                   )}
