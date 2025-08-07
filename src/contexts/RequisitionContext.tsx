@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Requisition } from '../types';
-import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById } from '../lib/requisitions';
+import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
 import { useAuth } from './AuthContext';
 
 interface RequisitionContextType {
@@ -9,6 +9,7 @@ interface RequisitionContextType {
   updateRequisition: (id: string, updates: Partial<Requisition>) => Promise<void>;
   getRequisition: (id: string) => Promise<Requisition | null>;
   markAsDelivered: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
+  deleteRequisition: (id: string) => Promise<void>;
 }
 
 const RequisitionContext = createContext<RequisitionContextType | undefined>(undefined);
@@ -75,12 +76,20 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     });
   };
 
+  const deleteRequisitionHandler = async (id: string) => {
+    const success = await deleteRequisition(id);
+    if (success) {
+      await loadRequisitions();
+    }
+  };
+
   const value: RequisitionContextType = {
     requisitions,
     addRequisition,
     updateRequisition,
     getRequisition,
-    markAsDelivered
+    markAsDelivered,
+    deleteRequisition: deleteRequisitionHandler
   };
 
   return (

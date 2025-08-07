@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Check, Edit2, Save, X, Trash2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useRequisitions } from '../contexts/RequisitionContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Requisition } from '../types';
 
 const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRequisition, updateRequisition, markAsDelivered } = useRequisitions();
+  const { getRequisition, updateRequisition, markAsDelivered, deleteRequisition } = useRequisitions();
+  const { isAdmin } = useAuth();
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeliveryEditing, setIsDeliveryEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Campos editáveis
   const [editData, setEditData] = useState({
@@ -90,6 +93,13 @@ const RequisitionDetail: React.FC = () => {
         oc: editData.oc 
       });
       setIsDeliveryEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (requisition) {
+      await deleteRequisition(requisition.id);
+      navigate('/home');
     }
   };
 
@@ -364,38 +374,73 @@ const RequisitionDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Ações de entrega */}
-            <div className="mt-8 flex justify-end space-x-3">
-              {requisition.status === 'pendente' && !isEditing && (
-                <>
-                  {!isDeliveryEditing ? (
+            {/* Ações de entrega e exclusão */}
+            <div className="mt-8 flex justify-between items-center">
+              {/* Botão de exclusão para admins */}
+              {isAdmin && (
+                <div>
+                  {!showDeleteConfirm ? (
                     <button
-                      onClick={() => setIsDeliveryEditing(true)}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md shadow-sm hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
-                      <Check className="h-4 w-4" />
-                      <span>Marcar como Entregue</span>
+                      <Trash2 className="h-4 w-4" />
+                      <span>Excluir Requisição</span>
                     </button>
                   ) : (
-                    <>
+                    <div className="flex space-x-2">
                       <button
-                        onClick={handleCancel}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                       >
                         <X className="h-4 w-4" />
                         <span>Cancelar</span>
                       </button>
                       <button
-                        onClick={handleMarkAsDelivered}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        onClick={handleDelete}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Confirmar Exclusão</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Ações de entrega */}
+              <div className="flex space-x-3">
+                {requisition.status === 'pendente' && !isEditing && (
+                  <>
+                    {!isDeliveryEditing ? (
+                      <button
+                        onClick={() => setIsDeliveryEditing(true)}
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                       >
                         <Check className="h-4 w-4" />
-                        <span>Confirmar Entrega</span>
+                        <span>Marcar como Entregue</span>
                       </button>
-                    </>
-                  )}
-                </>
-              )}
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleCancel}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <X className="h-4 w-4" />
+                          <span>Cancelar</span>
+                        </button>
+                        <button
+                          onClick={handleMarkAsDelivered}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <Check className="h-4 w-4" />
+                          <span>Confirmar Entrega</span>
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
