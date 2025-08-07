@@ -27,7 +27,7 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
 
     setIsLoading(true);
     try {
-      addRequisition({
+      await addRequisition({
         rq: formData.rq,
         valorTotal: parseFloat(formData.valorTotal),
         numeroOS: formData.numeroOS,

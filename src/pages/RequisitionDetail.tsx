@@ -26,27 +26,31 @@ const RequisitionDetail: React.FC = () => {
   });
 
   useEffect(() => {
-    if (id) {
-      const req = getRequisition(id);
-      if (req) {
-        setRequisition(req);
-        setEditData({
-          rq: req.rq,
-          valorTotal: req.valorTotal,
-          numeroOS: req.numeroOS,
-          descricao: req.descricao,
-          local: req.local,
-          fornecedor: req.fornecedor,
-          notaFiscal: req.notaFiscal || '',
-          oc: req.oc || ''
-        });
+    const loadRequisition = async () => {
+      if (id) {
+        const req = await getRequisition(id);
+        if (req) {
+          setRequisition(req);
+          setEditData({
+            rq: req.rq,
+            valorTotal: req.valorTotal,
+            numeroOS: req.numeroOS,
+            descricao: req.descricao,
+            local: req.local,
+            fornecedor: req.fornecedor,
+            notaFiscal: req.notaFiscal || '',
+            oc: req.oc || ''
+          });
+        }
       }
-    }
+    };
+
+    loadRequisition();
   }, [id, getRequisition]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (requisition) {
-      updateRequisition(requisition.id, {
+      await updateRequisition(requisition.id, {
         ...editData,
         valorTotal: Number(editData.valorTotal)
       });
@@ -76,9 +80,9 @@ const RequisitionDetail: React.FC = () => {
     setIsDeliveryEditing(false);
   };
 
-  const handleMarkAsDelivered = () => {
+  const handleMarkAsDelivered = async () => {
     if (requisition) {
-      markAsDelivered(requisition.id, editData.notaFiscal, editData.oc);
+      await markAsDelivered(requisition.id, editData.notaFiscal, editData.oc);
       setRequisition({ 
         ...requisition, 
         status: 'entregue', 
