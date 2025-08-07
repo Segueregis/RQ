@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Check, X, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import { User } from '../types';
+import { getAllUsers, updateUserStatus } from '../lib/auth';
 
 const Admin: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -11,21 +12,18 @@ const Admin: React.FC = () => {
     loadUsers();
   }, []);
 
-  const loadUsers = () => {
-    const savedUsers = localStorage.getItem('users');
-    if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
-    }
+  const loadUsers = async () => {
+    const users = await getAllUsers();
+    setUsers(users);
   };
 
-  const updateUserStatus = async (userId: string, status: 'approved' | 'rejected') => {
+  const handleUpdateUserStatus = async (userId: string, status: 'approved' | 'rejected') => {
     setIsLoading(true);
     try {
-      const updatedUsers = users.map(user =>
-        user.id === userId ? { ...user, status } : user
-      );
-      setUsers(updatedUsers);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      const success = await updateUserStatus(userId, status);
+      if (success) {
+        await loadUsers(); // Recarrega a lista de usuários
+      }
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
     } finally {
@@ -75,7 +73,7 @@ const Admin: React.FC = () => {
       {showActions && (
         <div className="mt-4 flex space-x-2">
           <button
-            onClick={() => updateUserStatus(user.id, 'approved')}
+            onClick={() => handleUpdateUserStatus(user.id, 'approved')}
             disabled={isLoading}
             className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -83,7 +81,7 @@ const Admin: React.FC = () => {
             <span>Aprovar</span>
           </button>
           <button
-            onClick={() => updateUserStatus(user.id, 'rejected')}
+            onClick={() => handleUpdateUserStatus(user.id, 'rejected')}
             disabled={isLoading}
             className="flex items-center space-x-1 px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >

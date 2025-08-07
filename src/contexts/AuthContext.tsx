@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, AuthContextType } from '../types';
+import { authenticateUser, createUser, updateUserStatus, getAllUsers } from '../lib/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -19,21 +20,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Initialize with admin user if not exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.length === 0) {
-      const adminUser: User = {
-        id: '1',
-        name: 'Administrador',
-        email: 'regis_etep@outlook.com',
-        password: 'Bemvindo22*',
-        status: 'approved',
-        role: 'admin',
-        createdAt: new Date().toISOString()
-      };
-      localStorage.setItem('users', JSON.stringify([adminUser]));
-    }
-
     // Check if user is logged in
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
@@ -42,8 +28,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const users: User[] = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
+    const user = await authenticateUser(email, password);
     
     if (user && user.status === 'approved') {
       setCurrentUser(user);
@@ -59,26 +44,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    const users: User[] = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Check if user already exists
-    if (users.find(u => u.email === email)) {
-      return false;
-    }
-
-    const newUser: User = {
-      id: Date.now().toString(),
+    const newUser = await createUser({
       name,
       email,
       password,
       status: 'pending',
-      role: 'user',
-      createdAt: new Date().toISOString()
-    };
+      role: 'user'
+    });
 
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    return true;
+    return newUser !== null;
   };
 
   const value: AuthContextType = {
