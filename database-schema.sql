@@ -5,7 +5,7 @@ CREATE TABLE users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'visualizador')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -96,6 +96,16 @@ CREATE POLICY "Admins can view all requisitions" ON requisitions
       SELECT 1 FROM users 
       WHERE id::text = auth.uid()::text 
       AND role = 'admin'
+    )
+  );
+
+-- Visualizadores podem ver todas as requisições
+CREATE POLICY "Viewers can view all requisitions" ON requisitions
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE id::text = auth.uid()::text 
+      AND role = 'visualizador'
     )
   );
 

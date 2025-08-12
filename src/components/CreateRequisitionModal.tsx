@@ -19,11 +19,11 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
   });
   const [isLoading, setIsLoading] = useState(false);
   const { addRequisition } = useRequisitions();
-  const { currentUser } = useAuth();
+  const { currentUser, isViewer } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
+    if (!currentUser || isViewer) return;
 
     setIsLoading(true);
     try {

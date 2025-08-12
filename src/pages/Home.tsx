@@ -11,7 +11,7 @@ const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pendente' | 'entregue'>('all');
   const { requisitions } = useRequisitions();
-  const { currentUser } = useAuth();
+  const { currentUser, isViewer } = useAuth();
   const navigate = useNavigate();
 
   const filteredRequisitions = useMemo(() => {
@@ -44,13 +44,15 @@ const Home: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Requisições</h1>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            <Plus className="h-5 w-5" />
-            <span>Criar nova RQ</span>
-          </button>
+          {!isViewer && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Criar nova RQ</span>
+            </button>
+          )}
         </div>
 
         {/* Filtros */}

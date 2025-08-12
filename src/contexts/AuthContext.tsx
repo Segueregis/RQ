@@ -61,7 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     register,
     isAuthenticated: !!currentUser,
-    isAdmin: currentUser?.role === 'admin'
+    isAdmin: currentUser?.role === 'admin',
+    isViewer: currentUser?.role === 'visualizador'
   };
 
   return (

@@ -10,7 +10,7 @@ const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getRequisition, updateRequisition, markAsDelivered, deleteRequisition } = useRequisitions();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isViewer } = useAuth();
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeliveryEditing, setIsDeliveryEditing] = useState(false);
@@ -166,7 +166,7 @@ const RequisitionDetail: React.FC = () => {
         <div className="bg-white shadow-sm rounded-lg border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900">Detalhes da Requisição</h2>
-            {requisition.status === 'pendente' && (
+            {requisition.status === 'pendente' && !isViewer && (
               <div className="flex space-x-2">
                 {!isEditing ? (
                   <button
@@ -204,7 +204,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   RQ
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <input
                     type="text"
                     value={editData.rq}
@@ -221,7 +221,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Valor Total
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <input
                     type="number"
                     step="0.01"
@@ -241,7 +241,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Número da OS
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <input
                     type="text"
                     value={editData.numeroOS}
@@ -258,7 +258,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Local
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <input
                     type="text"
                     value={editData.local}
@@ -275,7 +275,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Descrição
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <textarea
                     value={editData.descricao}
                     onChange={(e) => setEditData({ ...editData, descricao: e.target.value })}
@@ -292,7 +292,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fornecedor
                 </label>
-                {isEditing ? (
+                {isEditing && !isViewer ? (
                   <input
                     type="text"
                     value={editData.fornecedor}
@@ -319,7 +319,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nota Fiscal (NF)
                 </label>
-                {(isEditing || isDeliveryEditing) ? (
+                {(isEditing || isDeliveryEditing) && !isViewer ? (
                   <input
                     type="text"
                     value={editData.notaFiscal}
@@ -339,7 +339,7 @@ const RequisitionDetail: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   OC
                 </label>
-                {(isEditing || isDeliveryEditing) ? (
+                {(isEditing || isDeliveryEditing) && !isViewer ? (
                   <input
                     type="text"
                     value={editData.oc}
@@ -377,7 +377,7 @@ const RequisitionDetail: React.FC = () => {
             {/* Ações de entrega e exclusão */}
             <div className="mt-8 flex justify-between items-center">
               {/* Botão de exclusão para admins */}
-              {isAdmin && (
+              {isAdmin && !isViewer && (
                 <div>
                   {!showDeleteConfirm ? (
                     <button
@@ -410,7 +410,7 @@ const RequisitionDetail: React.FC = () => {
 
               {/* Ações de entrega */}
               <div className="flex space-x-3">
-                {requisition.status === 'pendente' && !isEditing && (
+                {requisition.status === 'pendente' && !isEditing && !isViewer && (
                   <>
                     {!isDeliveryEditing ? (
                       <button

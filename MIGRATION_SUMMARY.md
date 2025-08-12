@@ -7,17 +7,30 @@
 - `bcryptjs` - Para hash de senhas
 - `@types/bcryptjs` - Tipos TypeScript
 
-### 2. **Arquivos Criados**
+### 2. **Novo Perfil "Visualizador"**
+- Adicionado perfil `visualizador` ao sistema de permissões
+- Permissões somente leitura para todas as requisições
+- Botões de ação ocultos para visualizadores
+- Políticas de segurança atualizadas no banco
+
+### 3. **Arquivos Criados**
 - `src/lib/supabase.ts` - Configuração do cliente Supabase
 - `src/lib/auth.ts` - Utilitários de autenticação
 - `src/lib/requisitions.ts` - Utilitários de requisições
 - `database-schema.sql` - Schema do banco de dados
 - `SUPABASE_SETUP.md` - Instruções de configuração
+- `migration_visualizador.sql` - Migração para adicionar perfil visualizador
+- `PERFIL_VISUALIZADOR.md` - Documentação do novo perfil
 
-### 3. **Arquivos Modificados**
-- `src/contexts/AuthContext.tsx` - Migrado para usar Supabase
-- `src/contexts/RequisitionContext.tsx` - Migrado para usar Supabase
+### 4. **Arquivos Modificados**
+- `src/contexts/AuthContext.tsx` - Migrado para usar Supabase + adicionado `isViewer`
+- `src/contexts/RequisitionContext.tsx` - Migrado para usar Supabase + verificações de permissão
 - `src/pages/Admin.tsx` - Migrado para usar Supabase
+- `src/pages/Home.tsx` - Botão "Criar nova RQ" oculto para visualizadores
+- `src/pages/RequisitionDetail.tsx` - Botões de ação ocultos para visualizadores
+- `src/components/CreateRequisitionModal.tsx` - Verificação de permissão antes de criar
+- `src/types/index.ts` - Adicionado tipo `visualizador` e propriedade `isViewer`
+- `database-schema.sql` - Adicionado perfil `visualizador` e políticas de segurança
 
 ## 🔧 Configuração Necessária
 

@@ -4,7 +4,7 @@ export interface User {
   email: string;
   password: string;
   status: 'pending' | 'approved' | 'rejected';
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'visualizador';
   createdAt: string;
 }
 
@@ -31,4 +31,5 @@ export interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<boolean>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isViewer: boolean;
 }

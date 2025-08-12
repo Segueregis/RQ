@@ -28,7 +28,7 @@ interface RequisitionProviderProps {
 
 export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ children }) => {
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
-  const { currentUser, isAdmin } = useAuth();
+  const { currentUser, isAdmin, isViewer } = useAuth();
 
   useEffect(() => {
     if (currentUser) {
@@ -39,13 +39,13 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   const loadRequisitions = async () => {
     if (!currentUser) return;
     
-    const userId = isAdmin ? undefined : currentUser.id;
+    const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
     const reqs = await getRequisitions(userId);
     setRequisitions(reqs);
   };
 
   const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!currentUser) return;
+    if (!currentUser || isViewer) return;
 
     const newRequisition = await createRequisition({
       ...requisition,
@@ -58,6 +58,8 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const updateRequisition = async (id: string, updates: Partial<Requisition>) => {
+    if (isViewer) return;
+    
     const success = await updateRequisitionAPI(id, updates);
     if (success) {
       await loadRequisitions();
@@ -69,6 +71,8 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const markAsDelivered = async (id: string, notaFiscal?: string, oc?: string) => {
+    if (isViewer) return;
+    
     await updateRequisition(id, {
       status: 'entregue',
       notaFiscal,
@@ -77,6 +81,8 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const deleteRequisitionHandler = async (id: string) => {
+    if (isViewer) return;
+    
     const success = await deleteRequisition(id);
     if (success) {
       await loadRequisitions();

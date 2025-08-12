@@ -33,7 +33,7 @@
 - `email` - Email único
 - `password_hash` - Senha criptografada
 - `status` - Status do usuário (pending/approved/rejected)
-- `role` - Função do usuário (user/admin)
+- `role` - Função do usuário (user/admin/visualizador)
 - `created_at` - Data de criação
 
 ### Tabela `requisitions`
@@ -56,8 +56,10 @@
 O banco está configurado com políticas de segurança que garantem:
 - Usuários só veem suas próprias requisições
 - Admins veem todas as requisições
+- Visualizadores veem todas as requisições (somente leitura)
 - Usuários só podem editar suas próprias requisições
 - Admins podem editar todas as requisições
+- Visualizadores não podem editar, criar ou excluir requisições
 
 ## Próximos Passos
 
