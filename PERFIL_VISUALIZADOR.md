@@ -103,7 +103,16 @@ Execute o arquivo `migration_visualizador.sql` no Supabase Dashboard:
 ## Troubleshooting
 
 ### Problema: Visualizador não consegue ver requisições
-**Solução**: Verifique se a política "Viewers can view all requisitions" foi criada
+**Solução**: 
+1. Execute o script `verificar_politicas_visualizador.sql` no Supabase Dashboard
+2. Verifique se a política "Viewers can view all requisitions" foi criada
+3. Confirme se o usuário tem role = 'visualizador' na tabela users
+
+### Problema: Visualizador só vê suas próprias requisições
+**Solução**: 
+1. Verifique se a lógica de filtragem na página Home está correta
+2. Confirme se `isViewer` está sendo usado na condição `matchesUser`
+3. Execute o script de teste `teste_visualizador.sql`
 
 ### Problema: Visualizador consegue editar requisições
 **Solução**: Verifique se o frontend está usando `isViewer` corretamente

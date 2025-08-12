@@ -11,12 +11,14 @@ const Home: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pendente' | 'entregue'>('all');
   const { requisitions } = useRequisitions();
-  const { currentUser, isViewer } = useAuth();
+  const { currentUser, isViewer, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const filteredRequisitions = useMemo(() => {
     return requisitions.filter(req => {
-      const matchesUser = currentUser?.role === 'admin' || req.userId === currentUser?.id;
+      // Visualizadores e admins veem todas as requisições
+      // Usuários normais veem apenas suas próprias requisições
+      const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
       const matchesSearch = !searchTerm || 
         req.rq.toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.numeroOS.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,7 +28,7 @@ const Home: React.FC = () => {
       
       return matchesUser && matchesSearch && matchesStatus;
     });
-  }, [requisitions, currentUser, searchTerm, filterStatus]);
+  }, [requisitions, currentUser, isViewer, isAdmin, searchTerm, filterStatus]);
 
   const handleRowClick = (requisitionId: string) => {
     navigate(`/requisition/${requisitionId}`);
