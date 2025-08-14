@@ -8,6 +8,8 @@ const Klasmat: React.FC = () => {
   const { klasmatItems, createKlasmatItem, approveKlasmatItem } = useRequisitions();
   const [newItem, setNewItem] = useState({ name: '', code: '', category: 'CIVIL' });
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const categories = ['CIVIL', 'ELETRICA', 'HIDRAULICA', 'SERRALHERIA', 'PINTURA'];
 
@@ -16,6 +18,14 @@ const Klasmat: React.FC = () => {
     setNewItem({ name: '', code: '', category: 'CIVIL' });
     setIsCreating(false);
   };
+
+  const filteredItems = klasmatItems.filter((item) => {
+    const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <Layout>
@@ -26,7 +36,14 @@ const Klasmat: React.FC = () => {
           <ul>
             {categories.map((category) => (
               <li key={category} className="mb-2">
-                <button className="text-blue-600 hover:underline">{category}</button>
+                <button
+                  onClick={() => setSelectedCategory(category === selectedCategory ? null : category)}
+                  className={`text-blue-600 hover:underline ${
+                    selectedCategory === category ? 'font-bold underline' : ''
+                  }`}
+                >
+                  {category}
+                </button>
               </li>
             ))}
           </ul>
@@ -44,6 +61,16 @@ const Klasmat: React.FC = () => {
                 Criar Código Klasmat
               </button>
             )}
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Buscar por nome ou código"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            />
           </div>
 
           {isCreating && (
@@ -89,7 +116,7 @@ const Klasmat: React.FC = () => {
           )}
 
           <ul>
-            {klasmatItems.map((item) => (
+            {filteredItems.map((item) => (
               <li key={item.code} className="mb-2 p-4 border rounded-md bg-white">
                 <h3 className="text-lg font-bold">{item.name}</h3>
                 <p>Código: {item.code}</p>
