@@ -24,6 +24,13 @@ export interface Requisition {
   updatedAt: string;
 }
 
+export interface KlasmatItem {
+  name: string;
+  code: string;
+  category: 'CIVIL' | 'ELETRICA' | 'HIDRAULICA' | 'SERRALHERIA' | 'PINTURA';
+  approved: boolean;
+}
+
 export interface AuthContextType {
   currentUser: User | null;
   login: (email: string, password: string) => Promise<boolean>;

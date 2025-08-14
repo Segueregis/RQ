@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import RequisitionDetail from './pages/RequisitionDetail';
 import Admin from './pages/Admin';
+import Klasmat from './pages/Klasmat';
 
 function App() {
   return (
@@ -38,6 +39,14 @@ function App() {
               element={
                 <ProtectedRoute adminOnly>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/klasmat"
+              element={
+                <ProtectedRoute>
+                  <Klasmat />
                 </ProtectedRoute>
               }
             />

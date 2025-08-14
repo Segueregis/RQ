@@ -19,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigationItems = [
     { path: '/home', label: 'Requisições', icon: Home },
+    { path: '/klasmat', label: 'Klasmat', icon: FileText },
     ...(isAdmin ? [{ path: '/admin', label: 'Administração', icon: Settings }] : [])
   ];
 

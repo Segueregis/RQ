@@ -3,6 +3,13 @@ import { Requisition } from '../types';
 import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
 import { useAuth } from './AuthContext';
 
+interface KlasmatItem {
+  name: string;
+  code: string;
+  category: string;
+  approved: boolean;
+}
+
 interface RequisitionContextType {
   requisitions: Requisition[];
   addRequisition: (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -10,6 +17,9 @@ interface RequisitionContextType {
   getRequisition: (id: string) => Promise<Requisition | null>;
   markAsDelivered: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
   deleteRequisition: (id: string) => Promise<void>;
+  klasmatItems: KlasmatItem[];
+  createKlasmatItem: (item: Omit<KlasmatItem, 'approved'>) => Promise<void>;
+  approveKlasmatItem: (code: string) => Promise<void>;
 }
 
 const RequisitionContext = createContext<RequisitionContextType | undefined>(undefined);
@@ -28,6 +38,7 @@ interface RequisitionProviderProps {
 
 export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ children }) => {
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
+  const [klasmatItems, setKlasmatItems] = useState<KlasmatItem[]>([]);
   const { currentUser, isAdmin, isViewer } = useAuth();
 
   useEffect(() => {
@@ -36,12 +47,25 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     }
   }, [currentUser]);
 
+  useEffect(() => {
+    loadKlasmatItems();
+  }, []);
+
   const loadRequisitions = async () => {
     if (!currentUser) return;
     
     const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
     const reqs = await getRequisitions(userId);
     setRequisitions(reqs);
+  };
+
+  const loadKlasmatItems = async () => {
+    // Simulação de carregamento de itens Klasmat
+    const items = [
+      { name: 'Item 1', code: '19.059.0029', category: 'CIVIL', approved: true },
+      { name: 'Item 2', code: '19.059.0030', category: 'ELETRICA', approved: false }
+    ];
+    setKlasmatItems(items);
   };
 
   const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -89,13 +113,27 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     }
   };
 
+  const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
+    const newItem = { ...item, approved: false };
+    setKlasmatItems((prev) => [...prev, newItem]);
+  };
+
+  const approveKlasmatItem = async (code: string) => {
+    setKlasmatItems((prev) =>
+      prev.map((item) => (item.code === code ? { ...item, approved: true } : item))
+    );
+  };
+
   const value: RequisitionContextType = {
     requisitions,
     addRequisition,
     updateRequisition,
     getRequisition,
     markAsDelivered,
-    deleteRequisition: deleteRequisitionHandler
+    deleteRequisition: deleteRequisitionHandler,
+    klasmatItems: klasmatItems.filter((item) => item.approved || isAdmin),
+    createKlasmatItem,
+    approveKlasmatItem
   };
 
   return (
