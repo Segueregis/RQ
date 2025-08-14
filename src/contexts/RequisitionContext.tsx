@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Requisition } from '../types';
 import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
 import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface KlasmatItem {
   name: string;
@@ -114,8 +115,28 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
-    const newItem = { ...item, approved: false };
-    setKlasmatItems((prev) => [...prev, newItem]);
+    try {
+      const { data, error } = await supabase
+        .from('klasmat_codes')
+        .insert({
+          name: item.name,
+          code: item.code,
+          category: item.category,
+          approved: false,
+          user_id: currentUser?.id,
+        });
+
+      if (error) {
+        console.error('Erro ao criar item Klasmat:', error);
+        return;
+      }
+
+      if (data) {
+        setKlasmatItems((prev) => [...prev, data[0]]);
+      }
+    } catch (err) {
+      console.error('Erro ao criar item Klasmat:', err);
+    }
   };
 
   const approveKlasmatItem = async (code: string) => {
