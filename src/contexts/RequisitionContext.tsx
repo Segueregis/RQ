@@ -152,7 +152,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     getRequisition,
     markAsDelivered,
     deleteRequisition: deleteRequisitionHandler,
-    klasmatItems: klasmatItems.filter((item) => item.approved || isAdmin),
+    klasmatItems: klasmatItems.filter((item) => !item.approved && isAdmin),
     createKlasmatItem,
     approveKlasmatItem
   };
