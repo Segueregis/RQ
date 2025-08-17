@@ -22,7 +22,7 @@ CREATE TABLE requisitions (
   nota_fiscal TEXT,
   oc TEXT,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZON  SELECT * FROM klasmat_codes LIMIT 10;E DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -159,49 +159,29 @@ CREATE POLICY "Admins can delete all requisitions" ON requisitions
     )
   );
 
--- Políticas de segurança para itens Klasmat
--- Usuários podem ver apenas seus próprios itens Klasmat
-CREATE POLICY "Users can view own klasmat codes" ON klasmat_codes
-  FOR SELECT USING (user_id::text = auth.uid()::text);
+-- Políticas de segurança para a tabela klasmat_codes
 
--- Admins podem ver todos os itens Klasmat
-CREATE POLICY "Admins can view all klasmat codes" ON klasmat_codes
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text 
-      AND role = 'admin'
-    )
-  );
+-- Qualquer usuário pode inserir seus próprios códigos
+CREATE OR REPLACE POLICY "Users can insert own klasmat codes"
+ON klasmat_codes
+FOR INSERT
+WITH CHECK (user_id::text = auth.uid()::text);
 
--- Usuários podem inserir seus próprios itens Klasmat
-CREATE POLICY "Users can insert own klasmat codes" ON klasmat_codes
-  FOR INSERT WITH CHECK (user_id::text = auth.uid()::text);
+-- Todos os usuários podem visualizar apenas códigos aprovados
+CREATE OR REPLACE POLICY "All users can view approved klasmat codes"
+ON klasmat_codes
+FOR SELECT
+USING (approved = TRUE);
 
--- Usuários podem atualizar apenas seus próprios itens Klasmat
-CREATE POLICY "Users can update own klasmat codes" ON klasmat_codes
-  FOR UPDATE USING (user_id::text = auth.uid()::text);
-
--- Admins podem atualizar qualquer item Klasmat
-CREATE POLICY "Admins can update all klasmat codes" ON klasmat_codes
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text 
-      AND role = 'admin'
-    )
-  );
-
--- Usuários podem deletar apenas seus próprios itens Klasmat
-CREATE POLICY "Users can delete own klasmat codes" ON klasmat_codes
-  FOR DELETE USING (user_id::text = auth.uid()::text);
-
--- Admins podem deletar qualquer item Klasmat
-CREATE POLICY "Admins can delete all klasmat codes" ON klasmat_codes
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text 
-      AND role = 'admin'
-    )
-  );
+-- Apenas administradores podem aprovar códigos
+CREATE OR REPLACE POLICY "Admins can approve klasmat codes"
+ON klasmat_codes
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM users 
+    WHERE id::text = auth.uid()::text 
+    AND role = 'admin'
+  )
+)
+WITH CHECK (approved = TRUE);
