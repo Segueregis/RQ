@@ -115,6 +115,11 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
+    if (!currentUser) {
+      console.error('Usuário não autenticado');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('klasmat_codes')
@@ -123,7 +128,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
           code: item.code,
           category: item.category,
           approved: false,
-          user_id: currentUser?.id,
+          user_id: currentUser.id,
         });
 
       if (error) {
@@ -152,7 +157,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     getRequisition,
     markAsDelivered,
     deleteRequisition: deleteRequisitionHandler,
-    klasmatItems: klasmatItems.filter((item) => !item.approved && isAdmin),
+    klasmatItems: isAdmin ? klasmatItems : klasmatItems.filter(item => item.approved),
     createKlasmatItem,
     approveKlasmatItem
   };
