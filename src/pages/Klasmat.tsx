@@ -6,17 +6,20 @@ import Layout from '../components/Layout';
 const Klasmat: React.FC = () => {
   const { isAdmin } = useAuth();
   const { klasmatItems, createKlasmatItem, approveKlasmatItem } = useRequisitions();
+
   const [newItem, setNewItem] = useState({ name: '', code: '', category: 'CIVIL' });
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // ...restante do componente permanece igual
-
-
   const categories = ['CIVIL', 'ELETRICA', 'HIDRAULICA', 'SERRALHERIA', 'PINTURA'];
 
   const handleCreate = async () => {
+    if (!newItem.name || !newItem.code || !newItem.category) {
+      alert('Preencha todos os campos!');
+      return;
+    }
+
     await createKlasmatItem(newItem);
     setNewItem({ name: '', code: '', category: 'CIVIL' });
     setIsCreating(false);
@@ -79,6 +82,7 @@ const Klasmat: React.FC = () => {
           {isCreating && (
             <div className="mb-4 p-4 border rounded-md bg-white">
               <h2 className="text-lg font-bold mb-2">Novo Item</h2>
+
               <div className="mb-2">
                 <label className="block text-sm font-medium">Nome</label>
                 <input
@@ -88,6 +92,7 @@ const Klasmat: React.FC = () => {
                   className="w-full p-2 border rounded-md"
                 />
               </div>
+
               <div className="mb-2">
                 <label className="block text-sm font-medium">Código Klasmat</label>
                 <input
@@ -97,6 +102,7 @@ const Klasmat: React.FC = () => {
                   className="w-full p-2 border rounded-md"
                 />
               </div>
+
               <div className="mb-2">
                 <label className="block text-sm font-medium">Categoria</label>
                 <select
@@ -109,6 +115,7 @@ const Klasmat: React.FC = () => {
                   ))}
                 </select>
               </div>
+
               <button
                 onClick={handleCreate}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"

@@ -115,34 +115,37 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
-    if (!currentUser) {
-      console.error('Usuário não autenticado');
+  try {
+    // Pega o usuário diretamente do Supabase para garantir que user_id exista
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error('Erro ao obter usuário:', authError);
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from('klasmat_codes')
-        .insert({
-          name: item.name,
-          code: item.code,
-          category: item.category,
+    const { data, error } = await supabase
+      .from('klasmat_codes')
+      .insert([
+        {
+          ...item,
           approved: false,
-          user_id: currentUser.id,
-        });
+          user_id: user.id,
+        },
+      ]);
 
-      if (error) {
-        console.error('Erro ao criar item Klasmat:', error);
-        return;
-      }
-
-      if (data) {
-        setKlasmatItems((prev) => [...prev, data[0]]);
-      }
-    } catch (err) {
-      console.error('Erro ao criar item Klasmat:', err);
+    if (error) {
+      console.error('Erro ao criar item Klasmat:', error);
+      return;
     }
-  };
+
+    if (data) {
+      setKlasmatItems((prev) => [...prev, data[0]]);
+    }
+  } catch (err) {
+    console.error('Erro ao criar item Klasmat:', err);
+  }
+};
+
 
   const approveKlasmatItem = async (code: string) => {
     setKlasmatItems((prev) =>
