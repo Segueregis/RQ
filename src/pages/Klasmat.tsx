@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRequisitions } from '../contexts/RequisitionContext';
 import Layout from '../components/Layout';
 
 const Klasmat: React.FC = () => {
-  const { isAdmin, currentUser } = useAuth();
+  const { isAdmin } = useAuth();
   const { klasmatItems, createKlasmatItem, approveKlasmatItem } = useRequisitions();
   const [newItem, setNewItem] = useState({ name: '', code: '', category: 'CIVIL' });
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // ...restante do componente permanece igual
+
 
   const categories = ['CIVIL', 'ELETRICA', 'HIDRAULICA', 'SERRALHERIA', 'PINTURA'];
 
