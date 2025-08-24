@@ -52,21 +52,16 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     loadKlasmatItems();
   }, []);
 
+  // =============================
+  // FUNÇÕES DE REQUISIÇÕES
+  // =============================
+
   const loadRequisitions = async () => {
     if (!currentUser) return;
     
     const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
     const reqs = await getRequisitions(userId);
     setRequisitions(reqs);
-  };
-
-  const loadKlasmatItems = async () => {
-    // Simulação de carregamento de itens Klasmat
-    const items = [
-      { name: 'Item 1', code: '19.059.0029', category: 'CIVIL', approved: true },
-      { name: 'Item 2', code: '19.059.0030', category: 'ELETRICA', approved: false }
-    ];
-    setKlasmatItems(items);
   };
 
   const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -114,44 +109,90 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     }
   };
 
+  // =============================
+  // FUNÇÕES DO KLASMAT
+  // =============================
+
+  const loadKlasmatItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('klasmat_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar itens Klasmat:', error);
+        return;
+      }
+
+      if (data) {
+        setKlasmatItems(data);
+      }
+    } catch (err) {
+      console.error('Erro inesperado ao carregar itens Klasmat:', err);
+    }
+  };
+
   const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
-  try {
-    // Pega o usuário diretamente do Supabase para garantir que user_id exista
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('Erro ao obter usuário:', authError);
-      return;
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('Erro ao obter usuário:', authError);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('klasmat_codes')
+        .insert([
+          {
+            ...item,
+            approved: false,
+            user_id: user.id,
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.error('Erro ao criar item Klasmat:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setKlasmatItems((prev) => [data[0], ...prev]);
+      }
+    } catch (err) {
+      console.error('Erro ao criar item Klasmat:', err);
     }
-
-    const { data, error } = await supabase
-      .from('klasmat_codes')
-      .insert([
-        {
-          ...item,
-          approved: false,
-          user_id: user.id,
-        },
-      ]);
-
-    if (error) {
-      console.error('Erro ao criar item Klasmat:', error);
-      return;
-    }
-
-    if (data) {
-      setKlasmatItems((prev) => [...prev, data[0]]);
-    }
-  } catch (err) {
-    console.error('Erro ao criar item Klasmat:', err);
-  }
-};
-
+  };
 
   const approveKlasmatItem = async (code: string) => {
-    setKlasmatItems((prev) =>
-      prev.map((item) => (item.code === code ? { ...item, approved: true } : item))
-    );
+    try {
+      const { data, error } = await supabase
+        .from('klasmat_codes')
+        .update({ approved: true })
+        .eq('code', code)
+        .select();
+
+      if (error) {
+        console.error('Erro ao aprovar item:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setKlasmatItems((prev) =>
+          prev.map((item) =>
+            item.code === code ? { ...item, approved: true } : item
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Erro inesperado ao aprovar item:', err);
+    }
   };
+
+  // =============================
+  // CONTEXTO
+  // =============================
 
   const value: RequisitionContextType = {
     requisitions,
