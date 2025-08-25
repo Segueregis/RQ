@@ -1,3 +1,4 @@
+// /src/contexts/RequisitionContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Requisition } from '../types';
 import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
@@ -27,9 +28,7 @@ const RequisitionContext = createContext<RequisitionContextType | undefined>(und
 
 export const useRequisitions = () => {
   const context = useContext(RequisitionContext);
-  if (context === undefined) {
-    throw new Error('useRequisitions must be used within a RequisitionProvider');
-  }
+  if (!context) throw new Error('useRequisitions must be used within a RequisitionProvider');
   return context;
 };
 
@@ -42,76 +41,18 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   const [klasmatItems, setKlasmatItems] = useState<KlasmatItem[]>([]);
   const { currentUser, isAdmin, isViewer } = useAuth();
 
-  useEffect(() => {
-    if (currentUser) {
-      loadRequisitions();
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    loadKlasmatItems();
-  }, []);
-
   // =============================
-  // FUNÇÕES DE REQUISIÇÕES
+  // Load data
   // =============================
+  useEffect(() => { if (currentUser) loadRequisitions(); }, [currentUser]);
+  useEffect(() => { loadKlasmatItems(); }, []);
 
   const loadRequisitions = async () => {
     if (!currentUser) return;
-    
     const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
     const reqs = await getRequisitions(userId);
     setRequisitions(reqs);
   };
-
-  const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!currentUser || isViewer) return;
-
-    const newRequisition = await createRequisition({
-      ...requisition,
-      userId: currentUser.id
-    });
-
-    if (newRequisition) {
-      setRequisitions(prev => [newRequisition, ...prev]);
-    }
-  };
-
-  const updateRequisition = async (id: string, updates: Partial<Requisition>) => {
-    if (isViewer) return;
-    
-    const success = await updateRequisitionAPI(id, updates);
-    if (success) {
-      await loadRequisitions();
-    }
-  };
-
-  const getRequisition = async (id: string) => {
-    return await getRequisitionById(id);
-  };
-
-  const markAsDelivered = async (id: string, notaFiscal?: string, oc?: string) => {
-    if (isViewer) return;
-    
-    await updateRequisition(id, {
-      status: 'entregue',
-      notaFiscal,
-      oc
-    });
-  };
-
-  const deleteRequisitionHandler = async (id: string) => {
-    if (isViewer) return;
-    
-    const success = await deleteRequisition(id);
-    if (success) {
-      await loadRequisitions();
-    }
-  };
-
-  // =============================
-  // FUNÇÕES DO KLASMAT
-  // =============================
 
   const loadKlasmatItems = async () => {
     try {
@@ -124,32 +65,55 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
         console.error('Erro ao carregar itens Klasmat:', error);
         return;
       }
-
-      if (data) {
-        setKlasmatItems(data);
-      }
+      if (data) setKlasmatItems(data);
     } catch (err) {
       console.error('Erro inesperado ao carregar itens Klasmat:', err);
     }
   };
 
+  // =============================
+  // Funções de Requisições
+  // =============================
+  const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!currentUser || isViewer) return;
+    const newRequisition = await createRequisition({ ...requisition, userId: currentUser.id });
+    if (newRequisition) setRequisitions(prev => [newRequisition, ...prev]);
+  };
+
+  const updateRequisition = async (id: string, updates: Partial<Requisition>) => {
+    if (isViewer) return;
+    const success = await updateRequisitionAPI(id, updates);
+    if (success) await loadRequisitions();
+  };
+
+  const getRequisition = async (id: string) => await getRequisitionById(id);
+
+  const markAsDelivered = async (id: string, notaFiscal?: string, oc?: string) => {
+    if (isViewer) return;
+    await updateRequisition(id, { status: 'entregue', notaFiscal, oc });
+  };
+
+  const deleteRequisitionHandler = async (id: string) => {
+    if (isViewer) return;
+    const success = await deleteRequisition(id);
+    if (success) await loadRequisitions();
+  };
+
+  // =============================
+  // Funções Klasmat
+  // =============================
   const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Usuário atual:', user, 'Erro auth:', authError);
       if (authError || !user) {
-        console.error('Erro ao obter usuário:', authError);
+        console.error('Erro ao obter usuário ou não logado');
         return;
       }
 
       const { data, error } = await supabase
         .from('klasmat_codes')
-        .insert([
-          {
-            ...item,
-            approved: false,
-            user_id: user.id,
-          },
-        ])
+        .insert([{ ...item, approved: false, user_id: user.id }])
         .select();
 
       if (error) {
@@ -157,11 +121,10 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
         return;
       }
 
-      if (data && data.length > 0) {
-        setKlasmatItems((prev) => [data[0], ...prev]);
-      }
+      console.log('Item criado com sucesso:', data);
+      if (data && data.length > 0) setKlasmatItems(prev => [data[0], ...prev]);
     } catch (err) {
-      console.error('Erro ao criar item Klasmat:', err);
+      console.error('Erro inesperado ao criar item Klasmat:', err);
     }
   };
 
@@ -179,10 +142,8 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
       }
 
       if (data && data.length > 0) {
-        setKlasmatItems((prev) =>
-          prev.map((item) =>
-            item.code === code ? { ...item, approved: true } : item
-          )
+        setKlasmatItems(prev =>
+          prev.map(item => item.code === code ? { ...item, approved: true } : item)
         );
       }
     } catch (err) {
@@ -191,9 +152,8 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   // =============================
-  // CONTEXTO
+  // Contexto
   // =============================
-
   const value: RequisitionContextType = {
     requisitions,
     addRequisition,
@@ -206,9 +166,5 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     approveKlasmatItem
   };
 
-  return (
-    <RequisitionContext.Provider value={value}>
-      {children}
-    </RequisitionContext.Provider>
-  );
+  return <RequisitionContext.Provider value={value}>{children}</RequisitionContext.Provider>;
 };
