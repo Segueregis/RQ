@@ -100,56 +100,73 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   };
 
   // =============================
-  // Funções Klasmat
-  // =============================
-  const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('Usuário atual:', user, 'Erro auth:', authError);
-      if (authError || !user) {
-        console.error('Erro ao obter usuário ou não logado');
-        return;
-      }
+// Funções Klasmat
+// =============================
+const createKlasmatItem = async (item: Omit<KlasmatItem, 'approved'>) => {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Usuário atual:', user, 'Erro auth:', authError);
 
-      const { data, error } = await supabase
-        .from('klasmat_codes')
-        .insert([{ ...item, approved: false, user_id: user.id }])
-        .select();
-
-      if (error) {
-        console.error('Erro ao criar item Klasmat:', error);
-        return;
-      }
-
-      console.log('Item criado com sucesso:', data);
-      if (data && data.length > 0) setKlasmatItems(prev => [data[0], ...prev]);
-    } catch (err) {
-      console.error('Erro inesperado ao criar item Klasmat:', err);
+    if (authError || !user) {
+      console.error('Erro ao obter usuário ou não logado');
+      alert('Não foi possível criar o item. Verifique se você está logado.');
+      return;
     }
-  };
 
-  const approveKlasmatItem = async (code: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('klasmat_codes')
-        .update({ approved: true })
-        .eq('code', code)
-        .select();
+    // Inserir item no Supabase
+    const { data, error } = await supabase
+      .from('klasmat_codes')
+      .insert([{ ...item, approved: false, user_id: user.id }])
+      .select();
 
-      if (error) {
-        console.error('Erro ao aprovar item:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        setKlasmatItems(prev =>
-          prev.map(item => item.code === code ? { ...item, approved: true } : item)
-        );
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao aprovar item:', err);
+    if (error) {
+      console.error('Erro ao criar item Klasmat:', error);
+      alert('Erro ao criar item: ' + error.message);
+      return;
     }
-  };
+
+    if (data && data.length > 0) {
+      console.log('Item criado com sucesso:', data[0]);
+      setKlasmatItems(prev => [data[0], ...prev]);
+    } else {
+      console.warn('Nenhum item foi criado. Possível bloqueio por RLS.');
+      alert('Item não foi criado. Verifique suas permissões.');
+    }
+  } catch (err) {
+    console.error('Erro inesperado ao criar item Klasmat:', err);
+    alert('Erro inesperado ao criar item.');
+  }
+};
+
+const approveKlasmatItem = async (code: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('klasmat_codes')
+      .update({ approved: true })
+      .eq('code', code)
+      .select();
+
+    if (error) {
+      console.error('Erro ao aprovar item:', error);
+      alert('Erro ao aprovar item: ' + error.message);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      console.log('Item aprovado:', data[0]);
+      setKlasmatItems(prev =>
+        prev.map(item => item.code === code ? { ...item, approved: true } : item)
+      );
+    } else {
+      console.warn('Nenhum item foi aprovado. Verifique o código.');
+      alert('Nenhum item foi aprovado. Verifique o código.');
+    }
+  } catch (err) {
+    console.error('Erro inesperado ao aprovar item:', err);
+    alert('Erro inesperado ao aprovar item.');
+  }
+};
+
 
   // =============================
   // Contexto
