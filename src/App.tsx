@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import RequisitionDetail from './pages/RequisitionDetail';
 import Admin from './pages/Admin';
 import Klasmat from './pages/Klasmat';
+import NotaFiscalPage from './pages/NotaFiscal';
 
 function App() {
   return (
@@ -46,6 +47,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Klasmat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lancar-nota"
+              element={
+                <ProtectedRoute>
+                  <NotaFiscalPage />
                 </ProtectedRoute>
               }
             />

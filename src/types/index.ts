@@ -1,12 +1,12 @@
 export interface User {
   id: string;
-  name: string;
   email: string;
-  password: string;
-  status: 'pending' | 'approved' | 'rejected';
-  role: 'user' | 'admin' | 'visualizador';
-  createdAt: string;
+  name?: string;
+  // O 'role' 'visualizador' foi corrigido para 'viewer' para manter a consistência
+  role: 'user' | 'admin' | 'viewer' | 'financeiro';
+  ut?: string; // Adicionado como opcional para a página de NF
 }
+
 
 export interface Requisition {
   id: string;
@@ -33,10 +33,12 @@ export interface KlasmatItem {
 
 export interface AuthContextType {
   currentUser: User | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, password: string, ut: string) => Promise<boolean>;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isViewer: boolean;
+  isFinanceiro: boolean;
 }

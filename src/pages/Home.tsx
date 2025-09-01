@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, FilePlus2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import CreateRequisitionModal from '../components/CreateRequisitionModal';
 import { useRequisitions } from '../contexts/RequisitionContext';
@@ -46,13 +46,22 @@ const Home: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Requisições</h1>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Criar nova RQ</span>
-        </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/lancar-nota')}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+            >
+              <FilePlus2 className="h-5 w-5" />
+              <span>Lançar Nota</span>
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Criar nova RQ</span>
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}

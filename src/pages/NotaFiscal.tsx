@@ -270,7 +270,7 @@ const NotaFiscalPage = () => {
               required
             >
               <option value="" disabled>Selecione uma UT</option>
-              {utsList.map((utItem) => (
+              {utsList.map((utItem: string) => (
                 <option key={utItem} value={utItem}>
                   {utItem}
                 </option>
