@@ -43,6 +43,45 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
     onClose();
   };
 
+  const handleValorTotalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    // Permite apenas números e um separador decimal (ponto ou vírgula)
+    const sanitizedValue = value.replace(/[^0-9,.]/g, '').replace(',', '.');
+    const parts = sanitizedValue.split('.');
+    if (parts.length > 2) {
+      // Se houver mais de um ponto, mantém apenas o primeiro
+      setValorTotal(parts[0] + '.' + parts.slice(1).join(''));
+    } else {
+      setValorTotal(sanitizedValue);
+    }
+  };
+
+  const handleValorFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Converte 'R$ 1.234,56' para '1234.56' para facilitar a edição
+    const unformatted = value
+      .replace('R$', '')
+      .trim()
+      .replace(/\./g, '')
+      .replace(',', '.');
+    
+    if (unformatted && !isNaN(parseFloat(unformatted))) {
+      setValorTotal(unformatted);
+    }
+  };
+
+  const handleValorBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value) {
+      const num = parseFloat(value.replace(',', '.'));
+      if (!isNaN(num)) {
+        setValorTotal(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num));
+      } else {
+        setValorTotal(''); // Limpa o campo se o valor for inválido
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
@@ -50,7 +89,8 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
       return;
     }
 
-    const valorNumerico = parseFloat(valorTotal.replace(',', '.'));
+    const valorLimpo = String(valorTotal).replace('R$', '').trim().replace(/\./g, '').replace(',', '.');
+    const valorNumerico = parseFloat(valorLimpo);
     if (isNaN(valorNumerico) || valorNumerico <= 0) {
       setError('O valor total inserido é inválido.');
       return;
@@ -91,7 +131,17 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
           {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</p>}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input type="text" placeholder="RQ" value={rq} onChange={(e) => setRq(e.target.value)} required className="p-2 border rounded" />
-            <input type="text" placeholder="Valor Total (ex: 1234.56)" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} required className="p-2 border rounded" />
+            <input
+              type="text"
+              placeholder="R$ 0,00"
+              value={valorTotal}
+              onChange={handleValorTotalChange}
+              onFocus={handleValorFocus}
+              onBlur={handleValorBlur}
+              required
+              className="p-2 border rounded"
+              inputMode="decimal"
+            />
             <input type="text" placeholder="Número da OS" value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} required className="p-2 border rounded" />
             <input type="text" placeholder="Local" value={local} onChange={(e) => setLocal(e.target.value)} required className="p-2 border rounded" />
           </div>
