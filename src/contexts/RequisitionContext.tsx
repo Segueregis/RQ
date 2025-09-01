@@ -1,7 +1,13 @@
 // /src/contexts/RequisitionContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Requisition } from '../types';
-import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
+import { 
+  createRequisition, 
+  getRequisitions, 
+  updateRequisition as updateRequisitionAPI, 
+  getRequisitionById, 
+  deleteRequisition as deleteRequisitionAPI 
+} from '../lib/requisitions';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -14,7 +20,7 @@ interface KlasmatItem {
 
 interface RequisitionContextType {
   requisitions: Requisition[];
-  addRequisition: (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addRequisition: (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => Promise<void>;
   updateRequisition: (id: string, updates: Partial<Requisition>) => Promise<void>;
   getRequisition: (id: string) => Promise<Requisition | null>;
   markAsDelivered: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
@@ -44,15 +50,17 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   // =============================
   // Load data
   // =============================
-  useEffect(() => { if (currentUser) loadRequisitions(); }, [currentUser]);
-  useEffect(() => { loadKlasmatItems(); }, []);
+  useEffect(() => {
+    const loadRequisitions = async () => {
+      if (!currentUser) return;
+      const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
+      const reqs = await getRequisitions(userId);
+      setRequisitions(reqs);
+    };
+    if (currentUser) loadRequisitions();
+  }, [currentUser, isAdmin, isViewer]);
 
-  const loadRequisitions = async () => {
-    if (!currentUser) return;
-    const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
-    const reqs = await getRequisitions(userId);
-    setRequisitions(reqs);
-  };
+  useEffect(() => { loadKlasmatItems(); }, []);
 
   const loadKlasmatItems = async () => {
     try {
@@ -74,29 +82,39 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
   // =============================
   // Funções de Requisições
   // =============================
-  const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!currentUser || isViewer) return;
-    const newRequisition = await createRequisition({ ...requisition, userId: currentUser.id });
-    if (newRequisition) setRequisitions(prev => [newRequisition, ...prev]);
+  const addRequisition = async (requisitionData: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt' | 'status'>) => {
+    if (!currentUser) throw new Error('Usuário não autenticado');
+    if (isViewer) throw new Error('Visualizadores não podem criar requisições.');
+    
+    const newRequisition = await createRequisition({ ...requisitionData, userId: currentUser.id });
+    if (newRequisition) {
+      setRequisitions(prev => [newRequisition, ...prev]);
+    } else {
+      throw new Error('Falha ao criar a requisição no banco de dados.');
+    }
   };
 
   const updateRequisition = async (id: string, updates: Partial<Requisition>) => {
     if (isViewer) return;
     const success = await updateRequisitionAPI(id, updates);
-    if (success) await loadRequisitions();
+    if (success) {
+      setRequisitions(prev => prev.map(r => r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r));
+    }
   };
 
   const getRequisition = async (id: string) => await getRequisitionById(id);
 
   const markAsDelivered = async (id: string, notaFiscal?: string, oc?: string) => {
     if (isViewer) return;
-    await updateRequisition(id, { status: 'entregue', notaFiscal, oc });
+    await updateRequisition(id, { status: 'entregue', notaFiscal: notaFiscal || undefined, oc: oc || undefined });
   };
 
-  const deleteRequisitionHandler = async (id: string) => {
+  const deleteRequisition = async (id: string) => {
     if (isViewer) return;
-    const success = await deleteRequisition(id);
-    if (success) await loadRequisitions();
+    const success = await deleteRequisitionAPI(id);
+    if (success) {
+      setRequisitions(prev => prev.filter(r => r.id !== id));
+    }
   };
 
   // =============================
@@ -177,7 +195,7 @@ const approveKlasmatItem = async (code: string) => {
     updateRequisition,
     getRequisition,
     markAsDelivered,
-    deleteRequisition: deleteRequisitionHandler,
+    deleteRequisition,
     klasmatItems: isAdmin ? klasmatItems : klasmatItems.filter(item => item.approved),
     createKlasmatItem,
     approveKlasmatItem

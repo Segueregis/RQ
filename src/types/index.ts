@@ -5,6 +5,9 @@ export interface User {
   // O 'role' 'visualizador' foi corrigido para 'viewer' para manter a consistência
   role: 'user' | 'admin' | 'viewer' | 'financeiro';
   ut?: string; // Adicionado como opcional para a página de NF
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  password?: string; // Apenas para criação de usuário
 }
 
 

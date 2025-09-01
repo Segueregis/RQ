@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { X, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useRequisitions } from '../contexts/RequisitionContext';
 import { useAuth } from '../contexts/AuthContext';
+import { X } from 'lucide-react';
 
 interface CreateRequisitionModalProps {
   isOpen: boolean;
@@ -9,188 +9,109 @@ interface CreateRequisitionModalProps {
 }
 
 const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen, onClose }) => {
-  const [formData, setFormData] = useState({
-    rq: '',
-    valorTotal: '',
-    numeroOS: '',
-    descricao: '',
-    local: '',
-    fornecedor: ''
-  });
+  const [rq, setRq] = useState('');
+  const [valorTotal, setValorTotal] = useState('');
+  const [numeroOS, setNumeroOS] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [local, setLocal] = useState('');
+  const [fornecedor, setFornecedor] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const { addRequisition } = useRequisitions();
-  const { currentUser, isViewer } = useAuth();
+  const { currentUser } = useAuth();
+
+  // Efeito para preencher o local com a UT do usuário
+  useEffect(() => {
+    if (isOpen && currentUser?.ut) {
+      setLocal(currentUser.ut);
+    }
+  }, [isOpen, currentUser]);
+
+  if (!isOpen) return null;
+
+  const cleanUpAndClose = () => {
+    // Limpa o formulário
+    setRq('');
+    setValorTotal('');
+    setNumeroOS('');
+    setDescricao('');
+    setLocal(currentUser?.ut || '');
+    setFornecedor('');
+    setError('');
+    // Fecha o modal
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || isViewer) return;
+    if (!currentUser) {
+      setError('Você precisa estar logado para criar uma requisição.');
+      return;
+    }
 
+    const valorNumerico = parseFloat(valorTotal.replace(',', '.'));
+    if (isNaN(valorNumerico) || valorNumerico <= 0) {
+      setError('O valor total inserido é inválido.');
+      return;
+    }
+
+    setError('');
     setIsLoading(true);
+
     try {
       await addRequisition({
-        rq: formData.rq,
-        valorTotal: parseFloat(formData.valorTotal),
-        numeroOS: formData.numeroOS,
-        descricao: formData.descricao,
-        local: formData.local,
-        fornecedor: formData.fornecedor,
-        status: 'pendente',
-        userId: currentUser.id
+        rq,
+        valorTotal: valorNumerico,
+        numeroOS,
+        descricao,
+        local,
+        fornecedor,
+        userId: currentUser.id,
       });
       
-      setFormData({
-        rq: '',
-        valorTotal: '',
-        numeroOS: '',
-        descricao: '',
-        local: '',
-        fornecedor: ''
-      });
-      onClose();
-    } catch (error) {
-      console.error('Erro ao criar requisição:', error);
+      cleanUpAndClose();
+
+    } catch (err) {
+      console.error("Falha ao criar requisição:", err);
+      setError(err instanceof Error ? err.message : 'Falha ao criar a requisição. Verifique os dados e tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Criar Nova RQ</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="rq" className="block text-sm font-medium text-gray-700 mb-1">
-                RQ *
-              </label>
-              <input
-                type="text"
-                id="rq"
-                name="rq"
-                value={formData.rq}
-                onChange={handleChange}
-                maxLength={10}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: RQ001"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="valorTotal" className="block text-sm font-medium text-gray-700 mb-1">
-                Valor Total *
-              </label>
-              <input
-                type="number"
-                id="valorTotal"
-                name="valorTotal"
-                value={formData.valorTotal}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="0.00"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="numeroOS" className="block text-sm font-medium text-gray-700 mb-1">
-                Número da OS *
-              </label>
-              <input
-                type="text"
-                id="numeroOS"
-                name="numeroOS"
-                value={formData.numeroOS}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: OS123456"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">
-                Descrição *
-              </label>
-              <textarea
-                id="descricao"
-                name="descricao"
-                value={formData.descricao}
-                onChange={handleChange}
-                required
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Descreva a requisição..."
-              />
-            </div>
-
-            <div>
-              <label htmlFor="local" className="block text-sm font-medium text-gray-700 mb-1">
-                Local *
-              </label>
-              <input
-                type="text"
-                id="local"
-                name="local"
-                value={formData.local}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Almoxarifado"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="fornecedor" className="block text-sm font-medium text-gray-700 mb-1">
-                Fornecedor *
-              </label>
-              <input
-                type="text"
-                id="fornecedor"
-                name="fornecedor"
-                value={formData.fornecedor}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Nome do fornecedor"
-              />
-            </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg relative">
+        <button onClick={cleanUpAndClose} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+          <X size={24} />
+        </button>
+        <h2 className="text-xl font-bold mb-4">Criar Nova Requisição</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded">{error}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" placeholder="RQ" value={rq} onChange={(e) => setRq(e.target.value)} required className="p-2 border rounded" />
+            <input type="text" placeholder="Valor Total (ex: 1234.56)" value={valorTotal} onChange={(e) => setValorTotal(e.target.value)} required className="p-2 border rounded" />
+            <input type="text" placeholder="Número da OS" value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} required className="p-2 border rounded" />
+            <input type="text" placeholder="Local" value={local} onChange={(e) => setLocal(e.target.value)} required className="p-2 border rounded" />
           </div>
-
-          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+          <input type="text" placeholder="Fornecedor" value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} required className="p-2 border rounded w-full" />
+          <textarea placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required className="p-2 border rounded w-full h-24" />
+          <div className="flex justify-end space-x-3 pt-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={cleanUpAndClose}
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
             >
-              <Save className="h-4 w-4" />
-              <span>{isLoading ? 'Salvando...' : 'Salvar'}</span>
+              {isLoading ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </form>
