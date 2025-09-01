@@ -1,11 +1,30 @@
 import { supabase } from './supabase';
 import { Requisition } from '../types';
 
+const fromDB = (dbObj: any): Requisition | null => {
+  if (!dbObj) return null;
+  return {
+    id: dbObj.id,
+    rq: dbObj.rq,
+    valorTotal: dbObj.valor_total,
+    numeroOS: dbObj.numero_os,
+    descricao: dbObj.descricao,
+    local: dbObj.local,
+    fornecedor: dbObj.fornecedor,
+    status: dbObj.status,
+    notaFiscal: dbObj.nota_fiscal,
+    oc: dbObj.oc,
+    userId: dbObj.user_id,
+    createdAt: dbObj.created_at,
+    updatedAt: dbObj.updated_at,
+  };
+};
+
 export const getRequisitions = async (userId?: string): Promise<Requisition[]> => {
-  let query = supabase.from('requisitions').select('*').order('createdAt', { ascending: false });
+  let query = supabase.from('requisitions').select('*').order('created_at', { ascending: false });
 
   if (userId) {
-    query = query.eq('userId', userId);
+    query = query.eq('user_id', userId);
   }
 
   const { data, error } = await query;
@@ -14,7 +33,7 @@ export const getRequisitions = async (userId?: string): Promise<Requisition[]> =
     console.error('Erro ao buscar requisições:', error);
     return [];
   }
-  return data || [];
+  return (data || []).map(fromDB).filter(Boolean) as Requisition[];
 };
 
 export const getRequisitionById = async (id: string): Promise<Requisition | null> => {
@@ -23,7 +42,7 @@ export const getRequisitionById = async (id: string): Promise<Requisition | null
     console.error('Erro ao buscar requisição por ID:', error);
     return null;
   }
-  return data;
+  return fromDB(data);
 };
 
 type RequisitionCreationData = Omit<Requisition, 'id' | 'createdAt' | 'updatedAt' | 'status'>;
@@ -48,7 +67,7 @@ export const createRequisition = async (reqData: RequisitionCreationData): Promi
     console.error('Erro ao criar requisição no Supabase:', error);
     return null;
   }
-  return data;
+  return fromDB(data);
 };
 
 export const updateRequisition = async (id: string, updates: Partial<Requisition>): Promise<boolean> => {
