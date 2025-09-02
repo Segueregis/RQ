@@ -5,12 +5,8 @@ import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { utsList } from '../data/uts';
 
-
 /**
- * Simula o envio de um e-mail de confirmação para o usuário logado.
- * Em uma aplicação real, isso seria uma chamada para um backend ou uma Supabase Edge Function.
- * @param formData Os dados do formulário da nota fiscal.
- * @param userEmail O e-mail do usuário que receberá a confirmação.
+ * Envia um e-mail de confirmação chamando a Edge Function `enviar-email-nota` no Supabase.
  */
 const sendConfirmationEmail = async (formData: {
   numeroNota: string;
@@ -19,62 +15,33 @@ const sendConfirmationEmail = async (formData: {
   numeroOC: string;
   valorNota: number;
   ut: string;
-
 }, userEmail: string) => {
-  console.log(`--- SIMULANDO ENVIO DE EMAIL DE CONFIRMAÇÃO PARA ${userEmail} ---`);
 
-  // Formata a data para o padrão brasileiro (dd/mm/yyyy)
-  const formattedDate = new Date(formData.dataEmissao + 'T00:00:00').toLocaleDateString('pt-BR');
-  const formattedValue = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(formData.valorNota);
+  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email-safe`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY, // chave pública segura
+    },
+    body: JSON.stringify({
+      to: userEmail,
+      numeroNota: formData.numeroNota,
+      dataEmissao: formData.dataEmissao,
+      fornecedor: formData.fornecedor,
+      numeroOC: formData.numeroOC,
+      ut: formData.ut,
+      valorNota: formData.valorNota,
+    }),
+  });
 
-  const emailBody = `
-    <h1>Confirmação de Recebimento de Nota Fiscal</h1>
-    <p>Olá,</p>
-    <p>Este é um e-mail de confirmação de que sua nota fiscal foi registrada com sucesso no sistema. Seguem os dados enviados:</p>
-    <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-      <tr style="background-color: #f2f2f2;">
-        <td style="padding: 8px;"><strong>Campo</strong></td>
-        <td style="padding: 8px;"><strong>Valor</strong></td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>Número da Nota Fiscal</strong></td>
-        <td style="padding: 8px;">${formData.numeroNota}</td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>Data de Emissão</strong></td>
-        <td style="padding: 8px;">${formattedDate}</td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>Fornecedor</strong></td>
-        <td style="padding: 8px;">${formData.fornecedor}</td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>UT (Unidade de Trabalho)</strong></td>
-        <td style="padding: 8px;">${formData.ut}</td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>Valor da Nota Fiscal</strong></td>
-        <td style="padding: 8px;">${formattedValue}</td>
-      </tr>
-      <tr>
-        <td style="padding: 8px;"><strong>Número da OC</strong></td>
-        <td style="padding: 8px;">${formData.numeroOC}</td>
-      </tr>
-    </table>
-    <p>Este é um backup dos dados que você enviou.</p>
-    <p>Atenciosamente,<br>Sistema de Requisições</p>
-  `;
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Falha ao enviar e-mail via função');
+  }
 
-  console.log("Corpo do E-mail:");
-  console.log(emailBody);
-  console.log("--- FIM DA SIMULAÇÃO ---");
-
-  // Simula uma chamada de rede
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  return await response.json();
 };
+
 
 const NotaFiscalPage = () => {
   const [numeroNota, setNumeroNota] = useState('');
@@ -90,63 +57,36 @@ const NotaFiscalPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (currentUser?.ut) {
-      setUt(currentUser.ut);
-    }
+    if (currentUser?.ut) setUt(currentUser.ut);
   }, [currentUser]);
 
   const handleNumeroNotaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permite apenas caracteres numéricos
     const numericValue = e.target.value.replace(/\D/g, '');
     setNumeroNota(numericValue);
   };
 
   const handleValorNotaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    // Permite apenas números e um separador decimal (ponto ou vírgula)
     const sanitizedValue = value.replace(/[^0-9,.]/g, '').replace(',', '.');
     const parts = sanitizedValue.split('.');
-    if (parts.length > 2) {
-      // Se houver mais de um ponto, mantém apenas o primeiro
-      setValorNota(parts[0] + '.' + parts.slice(1).join(''));
-    } else {
-      setValorNota(sanitizedValue);
-    }
+    setValorNota(parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : sanitizedValue);
   };
 
   const handleValorFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Converte 'R$ 1.234,56' para '1234.56' para facilitar a edição
-    const unformatted = value
-      .replace('R$', '')
-      .trim()
-      .replace(/\./g, '')
-      .replace(',', '.');
-    
-    if (unformatted && !isNaN(parseFloat(unformatted))) {
-      setValorNota(unformatted);
-    }
+    const unformatted = e.target.value.replace('R$', '').trim().replace(/\./g, '').replace(',', '.');
+    if (unformatted && !isNaN(parseFloat(unformatted))) setValorNota(unformatted);
   };
 
   const handleValorBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value) {
       const num = parseFloat(value.replace(',', '.'));
-      if (!isNaN(num)) {
-        const formatted = new Intl.NumberFormat('pt-BR', {
-          style: 'currency',
-          currency: 'BRL'
-        }).format(num);
-        setValorNota(formatted);
-      } else {
-        setValorNota(''); // Limpa o campo se o valor for inválido
-      }
+      setValorNota(!isNaN(num) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num) : '');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     const valorLimpo = String(valorNota).replace('R$', '').trim().replace(/\./g, '').replace(',', '.');
     const parsedValor = parseFloat(valorLimpo);
 
@@ -154,17 +94,13 @@ const NotaFiscalPage = () => {
       setError('Todos os campos são obrigatórios e a UT deve ser uma opção válida da lista.');
       return;
     }
+
     setError('');
     setIsLoading(true);
 
     try {
-      if (!currentUser?.email) {
-        setError('Não foi possível identificar o e-mail do usuário logado. Faça login novamente.');
-        setIsLoading(false);
-        return;
-      }
+      if (!currentUser?.email) throw new Error('Não foi possível identificar o e-mail do usuário logado.');
 
-      // Objeto de dados para o Supabase, com nomes de colunas correspondentes
       const notaFiscalData = {
         numero_nota: numeroNota,
         data_emissao: dataEmissao,
@@ -173,20 +109,12 @@ const NotaFiscalPage = () => {
         ut,
         valor_nota: parsedValor,
         user_email: currentUser.email,
-        status: 'Aguardando Lançamento', // Status inicial padrão
+        status: 'Aguardando Lançamento',
       };
 
-      // 1. Inserir os dados no banco de dados do Supabase
       const { error: insertError } = await supabase.from('notas_fiscais').insert([notaFiscalData]);
+      if (insertError) throw new Error(`Erro ao salvar no banco: ${insertError.message}`);
 
-      if (insertError) {
-        // Se houver um erro no banco, exibe a mensagem e interrompe
-        setError(`Erro ao salvar no banco: ${insertError.message}`);
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Se a inserção for bem-sucedida, envia o e-mail de confirmação
       await sendConfirmationEmail({ numeroNota, dataEmissao, fornecedor, numeroOC, ut, valorNota: parsedValor }, currentUser.email);
       setIsSubmitted(true);
     } catch (err) {
@@ -201,13 +129,7 @@ const NotaFiscalPage = () => {
   return (
     <div className="nota-fiscal-container" style={{ position: 'relative' }}>
       <style>{`
-        /* Remove as setas dos inputs numéricos no Chrome, Safari, Edge, Opera */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        /* Remove as setas dos inputs numéricos no Firefox */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
         .close-button { position: absolute; top: 1rem; right: 1rem; background: none; border: none; cursor: pointer; color: #888; transition: color 0.2s; }
         .close-button:hover { color: #333; }
@@ -223,23 +145,19 @@ const NotaFiscalPage = () => {
         .success-message { margin-top: 1rem; padding: 1rem; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px; text-align: center; }
         .error-message { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: .75rem 1.25rem; margin-bottom: 1rem; border-radius: .25rem; text-align: center; }
       `}</style>
-      <button
-        onClick={() => navigate('/home')}
-        className="close-button"
-        aria-label="Fechar"
-      >
+
+      <button onClick={() => navigate('/home')} className="close-button" aria-label="Fechar">
         <X className="h-6 w-6" />
       </button>
+
       <h1>Lançamento de Nota Fiscal</h1>
+
       {isSubmitted ? (
         <div className="success-message">
           <h2>✅ Nota Fiscal Enviada!</h2>
           <p>Sua nota foi registrada e um e-mail de confirmação foi enviado.</p>
           <button
-            onClick={() => {
-              setIsSubmitted(false);
-              // Opcional: Adicionar uma função para limpar o formulário aqui
-            }}
+            onClick={() => setIsSubmitted(false)}
             className="submit-button"
           >
             Lançar Nova Nota
@@ -262,33 +180,14 @@ const NotaFiscalPage = () => {
           </div>
           <div className="form-group">
             <label htmlFor="ut">UT (Unidade de Trabalho)</label>
-            <select
-              id="ut"
-              value={ut}
-              onChange={(e) => setUt(e.target.value)}
-              disabled={isLoading}
-              required
-            >
+            <select id="ut" value={ut} onChange={(e) => setUt(e.target.value)} disabled={isLoading} required>
               <option value="" disabled>Selecione uma UT</option>
-              {utsList.map((utItem: string) => (
-                <option key={utItem} value={utItem}>
-                  {utItem}
-                </option>
-              ))}
+              {utsList.map((utItem: string) => <option key={utItem} value={utItem}>{utItem}</option>)}
             </select>
           </div>
           <div className="form-group">
             <label htmlFor="valorNota">Valor da Nota Fiscal</label>
-            <input
-              type="text"
-              id="valorNota"
-              value={valorNota}
-              onChange={handleValorNotaChange}
-              onFocus={handleValorFocus}
-              onBlur={handleValorBlur}
-              disabled={isLoading} required placeholder="R$ 0,00"
-              inputMode="decimal"
-            />
+            <input type="text" id="valorNota" value={valorNota} onChange={handleValorNotaChange} onFocus={handleValorFocus} onBlur={handleValorBlur} disabled={isLoading} required placeholder="R$ 0,00" inputMode="decimal" />
           </div>
           <div className="form-group">
             <label htmlFor="numeroOC">Número da OC (Ordem de Compra)</label>
