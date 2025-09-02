@@ -99,7 +99,7 @@ const NotaFiscalPage = () => {
     setIsLoading(true);
 
     try {
-      if (!currentUser?.email) throw new Error('Não foi possível identificar o e-mail do usuário logado.');
+      if (!currentUser?.id || !currentUser?.email) throw new Error('NÃ£o foi possÃvel identificar o ID ou e-mail do usuÃ¡rio logado.');
 
       const notaFiscalData = {
         numero_nota: numeroNota,
@@ -108,8 +108,9 @@ const NotaFiscalPage = () => {
         numero_oc: numeroOC,
         ut,
         valor_nota: parsedValor,
+        user_id: currentUser.id,
         user_email: currentUser.email,
-        status: 'Aguardando Lançamento',
+        status: 'Aguardando LanÃ§amento',
       };
 
       const { error: insertError } = await supabase.from('notas_fiscais').insert([notaFiscalData]);

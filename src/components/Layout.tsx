@@ -1,14 +1,14 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Settings, Home, FileText } from 'lucide-react';
+import { LogOut, Settings, Home, FileText, Sigma } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { currentUser, logout, isAdmin } = useAuth();
+  const { currentUser, logout, isAdmin, isFinanceiro } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,7 +20,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigationItems = [
     { path: '/home', label: 'Requisições', icon: Home },
     { path: '/klasmat', label: 'Klasmat', icon: FileText },
-    ...(isAdmin ? [{ path: '/admin', label: 'Administração', icon: Settings }] : [])
+    ...(isAdmin ? [{ path: '/admin', label: 'Administração', icon: Settings }] : []),
+    ...(isFinanceiro || isAdmin ? [{ path: '/financeiro/nf', label: 'Financeiro', icon: Sigma }] : [])
   ];
 
   return (

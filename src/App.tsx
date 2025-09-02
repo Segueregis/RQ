@@ -9,6 +9,7 @@ import RequisitionDetail from './pages/RequisitionDetail';
 import Admin from './pages/Admin';
 import Klasmat from './pages/Klasmat';
 import NotaFiscalPage from './pages/NotaFiscal';
+import NfFinanceiroPage from './pages/NfFinanceiro';
 
 function App() {
   return (
@@ -55,6 +56,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <NotaFiscalPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/financeiro/nf"
+              element={
+                <ProtectedRoute>
+                  <NfFinanceiroPage />
                 </ProtectedRoute>
               }
             />
