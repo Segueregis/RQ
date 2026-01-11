@@ -6,11 +6,12 @@ ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('user', 'admin', 'visualizador'));
 
 -- 2. Adicionar política de segurança para visualizadores verem todas as requisições
+DROP POLICY IF EXISTS "Viewers can view all requisitions" ON requisitions;
 CREATE POLICY "Viewers can view all requisitions" ON requisitions
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM users 
-      WHERE id::text = auth.uid()::text 
+      SELECT 1 FROM users
+      WHERE id::text = auth.uid()::text
       AND role = 'visualizador'
     )
   );
