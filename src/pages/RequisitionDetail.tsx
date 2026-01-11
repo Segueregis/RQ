@@ -312,7 +312,7 @@ const RequisitionDetail: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Valor Total
+                  VALOR RQ
                 </label>
                 {isEditing && !isViewer ? (
                   <input
@@ -492,7 +492,7 @@ const RequisitionDetail: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isDeliveryEditing ? 'Valor Total' : 'Valor da NF'}
+                  VALOR DA NF
                 </label>
                 {(isEditing || isDeliveryEditing) && !isViewer ? (
                   <input

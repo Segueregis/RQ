@@ -96,7 +96,7 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
 
             <div>
               <label htmlFor="valorTotal" className="block text-sm font-medium text-gray-700 mb-1">
-                Valor Total *
+                VALOR RQ *
               </label>
               <input
                 type="number"

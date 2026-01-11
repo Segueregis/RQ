@@ -82,7 +82,7 @@ const Finance: React.FC = () => {
                     RQ
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor Total
+                    Valor da NF
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fornecedor
@@ -117,7 +117,7 @@ const Finance: React.FC = () => {
                       {req.rq}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(req.valorTotal)}
+                      {req.valorNF ? formatCurrency(req.valorNF) : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {req.fornecedor}
