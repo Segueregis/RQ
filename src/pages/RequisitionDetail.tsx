@@ -273,7 +273,7 @@ const RequisitionDetail: React.FC = () => {
               }`}
             >
               {requisition.status === 'entregue' ? 'Entregue' : 
-               requisition.status === 'aguardando_lancamento' ? 'Aguardando Lancamento' : 'Pendente'}
+               requisition.status === 'aguardando_lancamento' ? 'Aguardando Lançamento' : 'Pendente'}
             </span>
           </div>
         </div>
@@ -449,7 +449,7 @@ const RequisitionDetail: React.FC = () => {
                 </label>
                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
                   {requisition.status === 'entregue' ? 'Entregue' : 
-                   requisition.status === 'aguardando_lancamento' ? 'Aguardando Lancamento' : 'Pendente'}
+                   requisition.status === 'aguardando_lancamento' ? 'Aguardando Lançamento' : 'Pendente'}
                 </p>
               </div>
 

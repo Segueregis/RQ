@@ -93,7 +93,7 @@ const Home: React.FC = () => {
                 <option value="all">Todos os Status</option>
                 <option value="pendente">Pendente</option>
                 <option value="entregue">Entregue</option>
-                <option value="aguardando_lancamento">Aguardando Lancamento</option>
+                <option value="aguardando_lancamento">Aguardando Lançamento</option>
               </select>
             </div>
           </div>
@@ -160,7 +160,7 @@ const Home: React.FC = () => {
                         }`}
                       >
                         {req.status === 'entregue' ? 'Entregue' : 
-                         req.status === 'aguardando_lancamento' ? 'Aguardando Lancamento' : 'Pendente'}
+                         req.status === 'aguardando_lancamento' ? 'Aguardando Lançamento' : 'Pendente'}
                       </span>
                     </td>
                   </tr>
