@@ -109,19 +109,6 @@ const RequisitionDetail: React.FC = () => {
     setFinanceErrors([]);
   };
 
-  const handleMarkAsDelivered = async () => {
-    if (requisition) {
-      await markAsDelivered(requisition.id, editData.notaFiscal, editData.oc);
-      setRequisition({ 
-        ...requisition, 
-        status: 'entregue', 
-        notaFiscal: editData.notaFiscal, 
-        oc: editData.oc 
-      });
-      setIsDeliveryEditing(false);
-    }
-  };
-
   const handleLaunchToFinance = async () => {
     const errors = validateFinanceFields();
     setFinanceErrors(errors);

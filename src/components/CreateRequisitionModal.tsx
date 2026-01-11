@@ -22,11 +22,6 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
   const { addRequisition } = useRequisitions();
   const { currentUser, isViewer } = useAuth();
 
-  const getUTDescription = (utId: string) => {
-    const ut = utsList.find(u => u.id === utId);
-    return ut ? ut.descricao : utId;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser || isViewer) return;
