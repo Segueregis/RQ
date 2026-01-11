@@ -22,8 +22,8 @@ const Home: React.FC = () => {
 
   const filteredRequisitions = useMemo(() => {
     return requisitions.filter(req => {
-      // Visualizadores e admins veem todas as requisições exceto as em financeiro
-      // Usuários normais veem apenas suas próprias requisições exceto as em financeiro
+      // Visualizadores e admins veem todas as requisições exceto as aguardando lancamento
+      // Usuários normais veem apenas suas próprias requisições exceto as aguardando lancamento
       const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
       const notInFinance = req.status !== 'aguardando_lancamento';
       const matchesSearch = !searchTerm || 
@@ -93,7 +93,7 @@ const Home: React.FC = () => {
                 <option value="all">Todos os Status</option>
                 <option value="pendente">Pendente</option>
                 <option value="entregue">Entregue</option>
-                <option value="aguardando_lancamento">Em Financeiro</option>
+                <option value="aguardando_lancamento">Aguardando Lancamento</option>
               </select>
             </div>
           </div>
@@ -160,7 +160,7 @@ const Home: React.FC = () => {
                         }`}
                       >
                         {req.status === 'entregue' ? 'Entregue' : 
-                         req.status === 'aguardando_lancamento' ? 'Em Financeiro' : 'Pendente'}
+                         req.status === 'aguardando_lancamento' ? 'Aguardando Lancamento' : 'Pendente'}
                       </span>
                     </td>
                   </tr>

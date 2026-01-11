@@ -19,8 +19,8 @@ const Finance: React.FC = () => {
 
   const financeRequisitions = useMemo(() => {
     return requisitions.filter(req => {
-      // Visualizadores e admins veem todas as requisições em financeiro
-      // Usuários normais veem apenas suas próprias requisições em financeiro
+      // Visualizadores e admins veem todas as requisições aguardando lancamento
+      // Usuários normais veem apenas suas próprias requisições aguardando lancamento 
       const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
       const inFinance = req.status === 'aguardando_lancamento';
       const matchesSearch = !searchTerm ||
@@ -138,7 +138,7 @@ const Finance: React.FC = () => {
                     )}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                        Em Financeiro
+                        Aguardando Lancamento
                       </span>
                     </td>
                   </tr>
@@ -148,7 +148,7 @@ const Finance: React.FC = () => {
           </div>
           {financeRequisitions.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500">Nenhuma requisição em financeiro.</p>
+              <p className="text-gray-500">Nenhuma requisição aguardando lancamento.</p>
             </div>
           )}
         </div>
