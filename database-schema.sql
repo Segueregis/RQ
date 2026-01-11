@@ -26,6 +26,18 @@ CREATE TABLE requisitions (
   data_envio DATE,
   usuario_envio TEXT,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZON  SELECT * FROM klasmat_codes LIMIT 10;E DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Criação da tabela de itens Klasmat
+CREATE TABLE klasmat_codes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL,
+  approved BOOLEAN DEFAULT FALSE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -44,6 +56,11 @@ CREATE TRIGGER update_requisitions_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_klasmat_codes_updated_at 
+    BEFORE UPDATE ON klasmat_codes 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
 -- Inserir usuário administrador padrão
 -- Senha: Bemvindo22* (hash bcrypt)
 INSERT INTO users (name, email, password_hash, status, role) 
@@ -58,6 +75,7 @@ VALUES (
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE requisitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE klasmat_codes ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de segurança para usuários
 -- Usuários podem ver apenas seus próprios dados
@@ -143,4 +161,31 @@ CREATE POLICY "Admins can delete all requisitions" ON requisitions
       WHERE id::text = auth.uid()::text 
       AND role = 'admin'
     )
-  ); 
+  );
+
+-- Políticas de segurança para a tabela klasmat_codes
+
+-- Qualquer usuário pode inserir seus próprios códigos
+CREATE OR REPLACE POLICY "Users can insert own klasmat codes"
+ON klasmat_codes
+FOR INSERT
+WITH CHECK (user_id::text = auth.uid()::text);
+
+-- Todos os usuários podem visualizar apenas códigos aprovados
+CREATE OR REPLACE POLICY "All users can view approved klasmat codes"
+ON klasmat_codes
+FOR SELECT
+USING (approved = TRUE);
+
+-- Apenas administradores podem aprovar códigos
+CREATE OR REPLACE POLICY "Admins can approve klasmat codes"
+ON klasmat_codes
+FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM users 
+    WHERE id::text = auth.uid()::text 
+    AND role = 'admin'
+  )
+)
+WITH CHECK (approved = TRUE);
