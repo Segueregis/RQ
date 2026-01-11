@@ -18,7 +18,7 @@ CREATE TABLE requisitions (
   descricao TEXT NOT NULL,
   local TEXT NOT NULL,
   fornecedor TEXT NOT NULL,
-  status TEXT DEFAULT 'pendente' CHECK (status IN ('pendente', 'entregue', 'em_financeiro')),
+  status TEXT DEFAULT 'pendente' CHECK (status IN ('pendente', 'entregue', 'aguardando_lancamento')),
   nota_fiscal TEXT,
   oc TEXT,
   data_emissao DATE,

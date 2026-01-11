@@ -118,7 +118,7 @@ const RequisitionDetail: React.FC = () => {
         await launchToFinance(requisition.id, editData.notaFiscal, editData.oc);
         setRequisition({ 
           ...requisition, 
-          status: 'em_financeiro', 
+          status: 'aguardando_lancamento, 
           notaFiscal: editData.notaFiscal, 
           oc: editData.oc,
           dataEmissao: editData.dataEmissao,
@@ -267,13 +267,13 @@ const RequisitionDetail: React.FC = () => {
               className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
                 requisition.status === 'entregue'
                   ? 'bg-green-100 text-green-800'
-                  : requisition.status === 'em_financeiro'
+                  : requisition.status === 'aguardando_lancamento'
                   ? 'bg-blue-100 text-blue-800'
                   : 'bg-yellow-100 text-yellow-800'
               }`}
             >
               {requisition.status === 'entregue' ? 'Entregue' : 
-               requisition.status === 'em_financeiro' ? 'Em Financeiro' : 'Pendente'}
+               requisition.status === 'aguardando_lancamento' ? 'Em Financeiro' : 'Pendente'}
             </span>
           </div>
         </div>
@@ -449,7 +449,7 @@ const RequisitionDetail: React.FC = () => {
                 </label>
                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
                   {requisition.status === 'entregue' ? 'Entregue' : 
-                   requisition.status === 'em_financeiro' ? 'Em Financeiro' : 'Pendente'}
+                   requisition.status === 'aguardando_lancamento' ? 'Em Financeiro' : 'Pendente'}
                 </p>
               </div>
 
@@ -544,7 +544,7 @@ const RequisitionDetail: React.FC = () => {
             </div>
 
             {/* Campos de financeiro */}
-            {requisition.status === 'em_financeiro' && (
+            {requisition.status === 'aguardando_lancamento' && (
               <div className="mt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">Informações de Financeiro</h3>

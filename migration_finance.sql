@@ -7,10 +7,10 @@ ADD COLUMN IF NOT EXISTS valor_nf DECIMAL(10,2),
 ADD COLUMN IF NOT EXISTS data_envio DATE,
 ADD COLUMN IF NOT EXISTS usuario_envio TEXT;
 
--- Atualizar o constraint de status para incluir 'em_financeiro'
+-- Atualizar o constraint de status para incluir 'aguardando_lancamento'
 ALTER TABLE requisitions
 DROP CONSTRAINT IF EXISTS requisitions_status_check;
 
 ALTER TABLE requisitions
 ADD CONSTRAINT requisitions_status_check
-CHECK (status IN ('pendente', 'entregue', 'em_financeiro'));
+CHECK (status IN ('pendente', 'entregue', 'aguardando_lancamento'));

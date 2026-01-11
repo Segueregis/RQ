@@ -19,7 +19,7 @@ export interface Requisition {
   descricao: string;
   local: string;
   fornecedor: string;
-  status: 'pendente' | 'entregue' | 'em_financeiro';
+  status: 'pendente' | 'entregue' | 'aguardando_lancamento';
   notaFiscal?: string;
   oc?: string;
   dataEmissao?: string;

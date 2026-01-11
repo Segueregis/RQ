@@ -10,7 +10,7 @@ import { utsList } from '../data/uts';
 const Home: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pendente' | 'entregue' | 'em_financeiro'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pendente' | 'entregue' | 'aguardando_lancamento'>('all');
   const { requisitions } = useRequisitions();
   const { currentUser, isViewer, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ const Home: React.FC = () => {
       // Visualizadores e admins veem todas as requisições exceto as em financeiro
       // Usuários normais veem apenas suas próprias requisições exceto as em financeiro
       const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
-      const notInFinance = req.status !== 'em_financeiro';
+      const notInFinance = req.status !== 'aguardando_lancamento';
       const matchesSearch = !searchTerm || 
         req.rq.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getUTDescription(req.ut).toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,13 +87,13 @@ const Home: React.FC = () => {
               <Filter className="h-5 w-5 text-gray-400" />
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pendente' | 'entregue' | 'em_financeiro')}
+                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pendente' | 'entregue' | 'aguardando_lancamento')}
                 className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Todos os Status</option>
                 <option value="pendente">Pendente</option>
                 <option value="entregue">Entregue</option>
-                <option value="em_financeiro">Em Financeiro</option>
+                <option value="aguardando_lancamento">Em Financeiro</option>
               </select>
             </div>
           </div>
@@ -154,13 +154,13 @@ const Home: React.FC = () => {
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           req.status === 'entregue'
                             ? 'bg-green-100 text-green-800'
-                            : req.status === 'em_financeiro'
+                            : req.status === 'aguardando_lancamento'
                             ? 'bg-blue-100 text-blue-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
                         {req.status === 'entregue' ? 'Entregue' : 
-                         req.status === 'em_financeiro' ? 'Em Financeiro' : 'Pendente'}
+                         req.status === 'aguardando_lancamento' ? 'Em Financeiro' : 'Pendente'}
                       </span>
                     </td>
                   </tr>

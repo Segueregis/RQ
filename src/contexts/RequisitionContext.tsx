@@ -85,7 +85,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     if (isViewer) return;
     
     await updateRequisition(id, {
-      status: 'em_financeiro',
+      status: 'aguardando_lancamento',
       notaFiscal,
       oc
     });

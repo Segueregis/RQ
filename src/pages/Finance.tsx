@@ -22,7 +22,7 @@ const Finance: React.FC = () => {
       // Visualizadores e admins veem todas as requisições em financeiro
       // Usuários normais veem apenas suas próprias requisições em financeiro
       const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
-      const inFinance = req.status === 'em_financeiro';
+      const inFinance = req.status === 'aguardando_lancamento';
       const matchesSearch = !searchTerm ||
         req.rq.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getUTDescription(req.ut).toLowerCase().includes(searchTerm.toLowerCase()) ||
