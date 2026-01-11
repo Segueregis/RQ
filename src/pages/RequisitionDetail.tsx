@@ -188,6 +188,28 @@ const RequisitionDetail: React.FC = () => {
     }
   };
 
+  const handleValorPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedValue = e.clipboardData.getData('text');
+    
+    // Converte formato brasileiro (1.234,56) para americano (1234.56)
+    const convertedValue = pastedValue
+      .replace(/\./g, '') // Remove pontos (separadores de milhares)
+      .replace(',', '.'); // Substitui vírgula por ponto (separador decimal)
+    
+    // Verifica se é um número válido e converte
+    const numericValue = parseFloat(convertedValue);
+    if (!isNaN(numericValue)) {
+      // Atualiza o editData com o valor numérico
+      const event = {
+        target: { value: convertedValue }
+      } as React.ChangeEvent<HTMLInputElement>;
+      // Simula o onChange para atualizar o estado
+      const newEditData = { ...editData, valorNF: numericValue };
+      setEditData(newEditData);
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -498,8 +520,9 @@ const RequisitionDetail: React.FC = () => {
                   <input
                     type="number"
                     step="0.01"
-                    value={editData.valorNF}
+                    value={editData.valorNF || ''}
                     onChange={(e) => setEditData({ ...editData, valorNF: Number(e.target.value) })}
+                    onPaste={handleValorPaste}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.00"
                   />

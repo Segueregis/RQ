@@ -60,6 +60,22 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleValorPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedValue = e.clipboardData.getData('text');
+    
+    // Converte formato brasileiro (1.234,56) para americano (1234.56)
+    const convertedValue = pastedValue
+      .replace(/\./g, '') // Remove pontos (separadores de milhares)
+      .replace(',', '.'); // Substitui vírgula por ponto (separador decimal)
+    
+    // Verifica se é um número válido
+    const numericValue = parseFloat(convertedValue);
+    if (!isNaN(numericValue)) {
+      setFormData(prev => ({ ...prev, valorTotal: convertedValue }));
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -104,6 +120,7 @@ const CreateRequisitionModal: React.FC<CreateRequisitionModalProps> = ({ isOpen,
                 name="valorTotal"
                 value={formData.valorTotal}
                 onChange={handleChange}
+                onPaste={handleValorPaste}
                 step="0.01"
                 min="0"
                 required
