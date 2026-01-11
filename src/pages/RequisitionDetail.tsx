@@ -118,7 +118,7 @@ const RequisitionDetail: React.FC = () => {
         await launchToFinance(requisition.id, editData.notaFiscal, editData.oc);
         setRequisition({ 
           ...requisition, 
-          status: 'aguardando_lancamento, 
+          status: 'aguardando_lancamento',
           notaFiscal: editData.notaFiscal, 
           oc: editData.oc,
           dataEmissao: editData.dataEmissao,
