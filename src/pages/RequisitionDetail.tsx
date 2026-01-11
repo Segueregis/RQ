@@ -10,7 +10,7 @@ import { utsList } from '../data/uts';
 const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRequisition, updateRequisition, markAsDelivered, launchToFinance, deleteRequisition } = useRequisitions();
+  const { getRequisition, updateRequisition, launchToFinance, deleteRequisition } = useRequisitions();
   const { isAdmin, isViewer } = useAuth();
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
