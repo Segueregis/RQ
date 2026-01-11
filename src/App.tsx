@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { RequisitionProvider } from './contexts/RequisitionContext';
@@ -8,6 +7,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import RequisitionDetail from './pages/RequisitionDetail';
 import Admin from './pages/Admin';
+import Finance from './pages/Finance';
 
 function App() {
   return (
@@ -38,6 +38,14 @@ function App() {
               element={
                 <ProtectedRoute adminOnly>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/finance"
+              element={
+                <ProtectedRoute>
+                  <Finance />
                 </ProtectedRoute>
               }
             />

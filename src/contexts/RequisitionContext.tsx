@@ -9,6 +9,7 @@ interface RequisitionContextType {
   updateRequisition: (id: string, updates: Partial<Requisition>) => Promise<void>;
   getRequisition: (id: string) => Promise<Requisition | null>;
   markAsDelivered: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
+  launchToFinance: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
   deleteRequisition: (id: string) => Promise<void>;
 }
 
@@ -80,6 +81,16 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     });
   };
 
+  const launchToFinance = async (id: string, notaFiscal?: string, oc?: string) => {
+    if (isViewer) return;
+    
+    await updateRequisition(id, {
+      status: 'em_financeiro',
+      notaFiscal,
+      oc
+    });
+  };
+
   const deleteRequisitionHandler = async (id: string) => {
     if (isViewer) return;
     
@@ -95,6 +106,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     updateRequisition,
     getRequisition,
     markAsDelivered,
+    launchToFinance,
     deleteRequisition: deleteRequisitionHandler
   };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Settings, Home, FileText } from 'lucide-react';
+import { LogOut, Settings, Home, FileText, DollarSign } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const navigationItems = [
     { path: '/home', label: 'Requisições', icon: Home },
+    { path: '/finance', label: 'Financeiro', icon: DollarSign },
     ...(isAdmin ? [{ path: '/admin', label: 'Administração', icon: Settings }] : [])
   ];
 
@@ -30,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center">
               <div className="flex items-center space-x-2">
                 <FileText className="h-8 w-8 text-blue-600" />
-                <h1 className="text-xl font-bold text-gray-900">REQUISIÇÃO UT 020</h1>
+                <h1 className="text-xl font-bold text-gray-900">REQUISIÇÕES / CONTAS A PAGAR</h1>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-4">
                 {navigationItems.map((item) => {

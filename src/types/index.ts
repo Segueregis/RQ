@@ -12,16 +12,20 @@ export interface Requisition {
   id: string;
   rq: string;
   valorTotal: number;
-  numeroOS: string;
+  ut: string;
   descricao: string;
   local: string;
   fornecedor: string;
-  status: 'pendente' | 'entregue';
+  status: 'pendente' | 'entregue' | 'em_financeiro';
   notaFiscal?: string;
   oc?: string;
+  dataEmissao?: string;
+  valorNF?: number;
   userId: string;
   createdAt: string;
   updatedAt: string;
+  dataEnvio?: string;
+  usuarioEnvio?: string;
 }
 
 export interface AuthContextType {

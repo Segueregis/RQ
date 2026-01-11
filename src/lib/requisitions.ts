@@ -8,14 +8,18 @@ export const createRequisition = async (requisitionData: Omit<Requisition, 'id' 
       .insert({
         rq: requisitionData.rq,
         valor_total: requisitionData.valorTotal,
-        numero_os: requisitionData.numeroOS,
+        ut: requisitionData.ut,
         descricao: requisitionData.descricao,
         local: requisitionData.local,
         fornecedor: requisitionData.fornecedor,
         status: requisitionData.status,
         nota_fiscal: requisitionData.notaFiscal,
         oc: requisitionData.oc,
-        user_id: requisitionData.userId
+        data_emissao: requisitionData.dataEmissao,
+        valor_nf: requisitionData.valorNF,
+        user_id: requisitionData.userId,
+        data_envio: requisitionData.dataEnvio,
+        usuario_envio: requisitionData.usuarioEnvio
       })
       .select()
       .single();
@@ -29,16 +33,20 @@ export const createRequisition = async (requisitionData: Omit<Requisition, 'id' 
       id: data.id,
       rq: data.rq,
       valorTotal: data.valor_total,
-      numeroOS: data.numero_os,
+      ut: data.ut,
       descricao: data.descricao,
       local: data.local,
       fornecedor: data.fornecedor,
       status: data.status,
       notaFiscal: data.nota_fiscal,
       oc: data.oc,
+      dataEmissao: data.data_emissao,
+      valorNF: data.valor_nf,
       userId: data.user_id,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      dataEnvio: data.data_envio,
+      usuarioEnvio: data.usuario_envio
     };
   } catch (error) {
     console.error('Erro ao criar requisição:', error);
@@ -69,16 +77,20 @@ export const getRequisitions = async (userId?: string): Promise<Requisition[]> =
       id: item.id,
       rq: item.rq,
       valorTotal: item.valor_total,
-      numeroOS: item.numero_os,
+      ut: item.ut,
       descricao: item.descricao,
       local: item.local,
       fornecedor: item.fornecedor,
       status: item.status,
       notaFiscal: item.nota_fiscal,
       oc: item.oc,
+      dataEmissao: item.data_emissao,
+      valorNF: item.valor_nf,
       userId: item.user_id,
       createdAt: item.created_at,
-      updatedAt: item.updated_at
+      updatedAt: item.updated_at,
+      dataEnvio: item.data_envio,
+      usuarioEnvio: item.usuario_envio
     }));
   } catch (error) {
     console.error('Erro ao buscar requisições:', error);
@@ -92,13 +104,17 @@ export const updateRequisition = async (id: string, updates: Partial<Requisition
     
     if (updates.rq) updateData.rq = updates.rq;
     if (updates.valorTotal) updateData.valor_total = updates.valorTotal;
-    if (updates.numeroOS) updateData.numero_os = updates.numeroOS;
+    if (updates.ut) updateData.ut = updates.ut;
     if (updates.descricao) updateData.descricao = updates.descricao;
     if (updates.local) updateData.local = updates.local;
     if (updates.fornecedor) updateData.fornecedor = updates.fornecedor;
     if (updates.status) updateData.status = updates.status;
     if (updates.notaFiscal !== undefined) updateData.nota_fiscal = updates.notaFiscal;
     if (updates.oc !== undefined) updateData.oc = updates.oc;
+    if (updates.dataEmissao !== undefined) updateData.data_emissao = updates.dataEmissao;
+    if (updates.valorNF !== undefined) updateData.valor_nf = updates.valorNF;
+    if (updates.dataEnvio !== undefined) updateData.data_envio = updates.dataEnvio;
+    if (updates.usuarioEnvio !== undefined) updateData.usuario_envio = updates.usuarioEnvio;
 
     const { error } = await supabase
       .from('requisitions')
@@ -152,16 +168,20 @@ export const getRequisitionById = async (id: string): Promise<Requisition | null
       id: data.id,
       rq: data.rq,
       valorTotal: data.valor_total,
-      numeroOS: data.numero_os,
+      ut: data.ut,
       descricao: data.descricao,
       local: data.local,
       fornecedor: data.fornecedor,
       status: data.status,
       notaFiscal: data.nota_fiscal,
       oc: data.oc,
+      dataEmissao: data.data_emissao,
+      valorNF: data.valor_nf,
       userId: data.user_id,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      dataEnvio: data.data_envio,
+      usuarioEnvio: data.usuario_envio
     };
   } catch (error) {
     console.error('Erro ao buscar requisição:', error);

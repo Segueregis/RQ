@@ -5,28 +5,36 @@ import Layout from '../components/Layout';
 import { useRequisitions } from '../contexts/RequisitionContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Requisition } from '../types';
+import { utsList } from '../data/uts';
 
 const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getRequisition, updateRequisition, markAsDelivered, deleteRequisition } = useRequisitions();
+  const { getRequisition, updateRequisition, markAsDelivered, launchToFinance, deleteRequisition } = useRequisitions();
   const { isAdmin, isViewer } = useAuth();
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeliveryEditing, setIsDeliveryEditing] = useState(false);
+  const [isFinanceEditing, setIsFinanceEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Campos editáveis
   const [editData, setEditData] = useState({
     rq: '',
     valorTotal: 0,
-    numeroOS: '',
+    ut: '', // <-- substitui numeroOS
     descricao: '',
     local: '',
     fornecedor: '',
     notaFiscal: '',
-    oc: ''
+    oc: '',
+    dataEmissao: '',
+    valorNF: 0
   });
+  const [financeData, setFinanceData] = useState({
+    usuarioEnvio: ''
+  });
+  const [financeErrors, setFinanceErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const loadRequisition = async () => {
@@ -37,12 +45,17 @@ const RequisitionDetail: React.FC = () => {
           setEditData({
             rq: req.rq,
             valorTotal: req.valorTotal,
-            numeroOS: req.numeroOS,
+            ut: req.ut,
             descricao: req.descricao,
             local: req.local,
             fornecedor: req.fornecedor,
             notaFiscal: req.notaFiscal || '',
-            oc: req.oc || ''
+            oc: req.oc || '',
+            dataEmissao: req.dataEmissao || '',
+            valorNF: req.valorNF || 0
+          });
+          setFinanceData({
+            usuarioEnvio: req.usuarioEnvio || ''
           });
         }
       }
@@ -51,18 +64,24 @@ const RequisitionDetail: React.FC = () => {
     loadRequisition();
   }, [id, getRequisition]);
 
-  const handleSave = async () => {
+  // Validação em tempo real durante lançamento para financeiro
+  useEffect(() => {
+    if (isDeliveryEditing) {
+      const errors = validateFinanceFields();
+      setFinanceErrors(errors);
+    }
+  }, [editData, isDeliveryEditing]);
+
+  const handleSaveFinance = async () => {
     if (requisition) {
       await updateRequisition(requisition.id, {
-        ...editData,
-        valorTotal: Number(editData.valorTotal)
+        usuarioEnvio: financeData.usuarioEnvio
       });
       setRequisition({
         ...requisition,
-        ...editData,
-        valorTotal: Number(editData.valorTotal)
+        usuarioEnvio: financeData.usuarioEnvio
       });
-      setIsEditing(false);
+      setIsFinanceEditing(false);
     }
   };
 
@@ -71,16 +90,23 @@ const RequisitionDetail: React.FC = () => {
       setEditData({
         rq: requisition.rq,
         valorTotal: requisition.valorTotal,
-        numeroOS: requisition.numeroOS,
+        ut: requisition.ut,
         descricao: requisition.descricao,
         local: requisition.local,
         fornecedor: requisition.fornecedor,
         notaFiscal: requisition.notaFiscal || '',
-        oc: requisition.oc || ''
+        oc: requisition.oc || '',
+        dataEmissao: requisition.dataEmissao || '',
+        valorNF: requisition.valorNF || 0
+      });
+      setFinanceData({
+        usuarioEnvio: requisition.usuarioEnvio || ''
       });
     }
     setIsEditing(false);
     setIsDeliveryEditing(false);
+    setIsFinanceEditing(false);
+    setFinanceErrors([]);
   };
 
   const handleMarkAsDelivered = async () => {
@@ -93,6 +119,78 @@ const RequisitionDetail: React.FC = () => {
         oc: editData.oc 
       });
       setIsDeliveryEditing(false);
+    }
+  };
+
+  const handleLaunchToFinance = async () => {
+    const errors = validateFinanceFields();
+    setFinanceErrors(errors);
+
+    if (errors.length === 0) {
+      if (requisition) {
+        await launchToFinance(requisition.id, editData.notaFiscal, editData.oc);
+        setRequisition({ 
+          ...requisition, 
+          status: 'em_financeiro', 
+          notaFiscal: editData.notaFiscal, 
+          oc: editData.oc,
+          dataEmissao: editData.dataEmissao,
+          valorNF: editData.valorNF,
+          fornecedor: editData.fornecedor
+        });
+        setIsDeliveryEditing(false);
+        setFinanceErrors([]);
+      }
+    }
+  };
+
+  const validateFinanceFields = () => {
+    const errors = [];
+
+    // Verificar se todos os campos estão preenchidos
+    if (!editData.notaFiscal?.trim()) {
+      errors.push('Nota Fiscal é obrigatória');
+    }
+    if (!editData.oc?.trim()) {
+      errors.push('OC é obrigatória');
+    }
+    if (!editData.dataEmissao?.trim()) {
+      errors.push('Data Emissão é obrigatória');
+    }
+    if (!editData.valorNF || editData.valorNF <= 0) {
+      errors.push('Valor da NF deve ser maior que zero');
+    }
+    if (!editData.fornecedor?.trim()) {
+      errors.push('Fornecedor é obrigatório');
+    }
+
+    // Validar Nota Fiscal: apenas números
+    if (editData.notaFiscal && !/^\d+$/.test(editData.notaFiscal.trim())) {
+      errors.push('Nota Fiscal deve conter apenas números');
+    }
+
+    // Validar OC: deve conter letras E números
+    if (editData.oc && !(/^(?=.*[a-zA-Z])(?=.*\d)/.test(editData.oc.trim()))) {
+      errors.push('OC deve conter letras e números');
+    }
+
+    return errors;
+  };
+
+  const handleSave = async () => {
+    if (requisition) {
+      await updateRequisition(requisition.id, {
+        ...editData,
+        valorTotal: Number(editData.valorTotal),
+        valorNF: Number(editData.valorNF)
+      });
+      setRequisition({
+        ...requisition,
+        ...editData,
+        valorTotal: Number(editData.valorTotal),
+        valorNF: Number(editData.valorNF)
+      });
+      setIsEditing(false);
     }
   };
 
@@ -118,6 +216,11 @@ const RequisitionDetail: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getUTDescription = (utId: string) => {
+    const ut = utsList.find(u => u.id === utId);
+    return ut ? ut.descricao : utId;
   };
 
   if (!requisition) {
@@ -155,10 +258,13 @@ const RequisitionDetail: React.FC = () => {
               className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
                 requisition.status === 'entregue'
                   ? 'bg-green-100 text-green-800'
+                  : requisition.status === 'em_financeiro'
+                  ? 'bg-blue-100 text-blue-800'
                   : 'bg-yellow-100 text-yellow-800'
               }`}
             >
-              {requisition.status === 'entregue' ? 'Entregue' : 'Pendente'}
+              {requisition.status === 'entregue' ? 'Entregue' : 
+               requisition.status === 'em_financeiro' ? 'Em Financeiro' : 'Pendente'}
             </span>
           </div>
         </div>
@@ -239,18 +345,25 @@ const RequisitionDetail: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número da OS
+                  UT
                 </label>
                 {isEditing && !isViewer ? (
-                  <input
-                    type="text"
-                    value={editData.numeroOS}
-                    onChange={(e) => setEditData({ ...editData, numeroOS: e.target.value })}
+                  <select
+                    value={editData.ut}
+                    onChange={(e) => setEditData({ ...editData, ut: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Número da OS"
-                  />
+                  >
+                    <option value="">Selecione uma UT</option>
+                    {utsList.map((ut) => (
+                      <option key={ut.id} value={ut.id}>
+                        {ut.descricao}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
-                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.numeroOS}</p>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                    {requisition.ut ? getUTDescription(requisition.ut) : '-'}
+                  </p>
                 )}
               </div>
 
@@ -286,13 +399,18 @@ const RequisitionDetail: React.FC = () => {
                 ) : (
                   <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">{requisition.descricao}</p>
                 )}
+                {isDeliveryEditing && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm font-medium text-blue-800">Preencha para o financeiro</p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fornecedor
                 </label>
-                {isEditing && !isViewer ? (
+                {(isEditing || isDeliveryEditing) && !isViewer ? (
                   <input
                     type="text"
                     value={editData.fornecedor}
@@ -305,12 +423,24 @@ const RequisitionDetail: React.FC = () => {
                 )}
               </div>
 
+              {isDeliveryEditing && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    UT
+                  </label>
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                    {requisition.ut ? getUTDescription(requisition.ut) : '-'}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                  {requisition.status === 'entregue' ? 'Entregue' : 'Pendente'}
+                  {requisition.status === 'entregue' ? 'Entregue' : 
+                   requisition.status === 'em_financeiro' ? 'Em Financeiro' : 'Pendente'}
                 </p>
               </div>
 
@@ -357,22 +487,119 @@ const RequisitionDetail: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data Emissão
+                </label>
+                {(isEditing || isDeliveryEditing) && !isViewer ? (
+                  <input
+                    type="date"
+                    value={editData.dataEmissao}
+                    onChange={(e) => setEditData({ ...editData, dataEmissao: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                    {requisition.dataEmissao ? formatDate(requisition.dataEmissao) : '-'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {isDeliveryEditing ? 'Valor Total' : 'Valor da NF'}
+                </label>
+                {(isEditing || isDeliveryEditing) && !isViewer ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editData.valorNF}
+                    onChange={(e) => setEditData({ ...editData, valorNF: Number(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                  />
+                ) : (
+                  <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                    {requisition.valorNF ? formatCurrency(requisition.valorNF) : '-'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Criado em
                 </label>
                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
                   {formatDate(requisition.createdAt)}
                 </p>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Atualizado em
-                </label>
-                <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                  {formatDate(requisition.updatedAt)}
-                </p>
-              </div>
             </div>
+
+            {/* Campos de financeiro */}
+            {requisition.status === 'em_financeiro' && (
+              <div className="mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Informações de Financeiro</h3>
+                  {!isViewer && (
+                    <div className="flex space-x-2">
+                      {!isFinanceEditing ? (
+                        <button
+                          onClick={() => setIsFinanceEditing(true)}
+                          className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                          <span>Editar</span>
+                        </button>
+                      ) : (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={handleCancel}
+                            className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                          >
+                            <X className="h-4 w-4" />
+                            <span>Cancelar</span>
+                          </button>
+                          <button
+                            onClick={handleSaveFinance}
+                            className="flex items-center space-x-2 px-3 py-1 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <Save className="h-4 w-4" />
+                            <span>Salvar</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      UT
+                    </label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                      {requisition.ut ? getUTDescription(requisition.ut) : '-'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Usuário que Enviou
+                    </label>
+                    {isFinanceEditing && !isViewer ? (
+                      <input
+                        type="text"
+                        value={financeData.usuarioEnvio}
+                        onChange={(e) => setFinanceData({ ...financeData, usuarioEnvio: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Nome do usuário"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                        {requisition.usuarioEnvio || '-'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Ações de entrega e exclusão */}
             <div className="mt-8 flex justify-between items-center">
@@ -415,13 +642,22 @@ const RequisitionDetail: React.FC = () => {
                     {!isDeliveryEditing ? (
                       <button
                         onClick={() => setIsDeliveryEditing(true)}
-                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md shadow-sm hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md shadow-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         <Check className="h-4 w-4" />
-                        <span>Marcar como Entregue</span>
+                        <span>Lançar para Financeiro</span>
                       </button>
                     ) : (
                       <>
+                        {financeErrors.length > 0 && (
+                          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                            <ul className="text-sm text-red-800">
+                              {financeErrors.map((error, index) => (
+                                <li key={index}>• {error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         <button
                           onClick={handleCancel}
                           className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -430,11 +666,12 @@ const RequisitionDetail: React.FC = () => {
                           <span>Cancelar</span>
                         </button>
                         <button
-                          onClick={handleMarkAsDelivered}
-                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                          onClick={handleLaunchToFinance}
+                          disabled={financeErrors.length > 0}
+                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Check className="h-4 w-4" />
-                          <span>Confirmar Entrega</span>
+                          <span>Confirmar Lançamento</span>
                         </button>
                       </>
                     )}
