@@ -15,7 +15,6 @@ O perfil "visualizador" foi adicionado ao sistema para permitir que usuários te
 ### ❌ **Permissões Negadas**
 1. **Criar novas RQs** - Botão "Criar nova RQ" está oculto
 2. **Editar requisições** - Botão "Editar RQ" está oculto
-3. **Marcar como entregue** - Botão "Marcar como Entregue" está oculto
 4. **Excluir requisições** - Botão "Excluir Requisição" está oculto
 5. **Modificar qualquer dado** - Todos os campos são somente leitura
 
@@ -78,14 +77,13 @@ Execute o arquivo `migration_visualizador.sql` no Supabase Dashboard:
    - ✅ Ver todos os campos da requisição
    - ✅ Campos em modo somente leitura
    - ❌ Não deve ver botões de edição
-   - ❌ Não deve ver botão "Marcar como Entregue"
    - ❌ Não deve ver botão "Excluir"
 
 4. **Tentativas de Modificação**
    - ❌ Não deve conseguir criar requisições
    - ❌ Não deve conseguir editar requisições
    - ❌ Não deve conseguir excluir requisições
-   - ❌ Não deve conseguir marcar como entregue
+   
 
 ## Segurança
 

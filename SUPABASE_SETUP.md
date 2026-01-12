@@ -44,7 +44,7 @@
 - `descricao` - Descrição
 - `local` - Local
 - `fornecedor` - Fornecedor
-- `status` - Status (pendente/entregue)
+- `status` - Status (pendente/Aguardando Lançamento)
 - `nota_fiscal` - Número da nota fiscal (opcional)
 - `oc` - Ordem de compra (opcional)
 - `user_id` - ID do usuário que criou

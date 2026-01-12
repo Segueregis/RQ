@@ -82,7 +82,6 @@ if (userId) {
 ### ✅ **Teste 2: Permissões de Ação**
 - Botão "Criar nova RQ" continua oculto para visualizadores
 - Botões de edição continuam ocultos para visualizadores
-- Botão "Marcar como Entregue" continua oculto para visualizadores
 - Botão "Excluir" continua oculto para visualizadores
 
 ### ✅ **Teste 3: Funcionalidades de Busca e Filtro**

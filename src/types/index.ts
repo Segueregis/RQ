@@ -2,14 +2,26 @@ export interface User {
   id: string;
   email: string;
   name?: string;
-  // O 'role' 'visualizador' foi corrigido para 'viewer' para manter a consistência
   role: 'user' | 'admin' | 'viewer' | 'financeiro';
-  ut?: string; // Adicionado como opcional para a página de NF
+  ut?: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
-  password?: string; // Apenas para criação de usuário
+  password?: string;
 }
 
+/**
+ * 🔹 Status da Requisição (fluxo novo)
+ * pendente → aguardando_lancamento
+ * aguardando_lancamento → lancada | abriu_chamado
+ * abriu_chamado → lancada
+ */
+export type RequisitionStatus =
+  | 'pendente'
+  | 'aguardando_lancamento'
+  | 'lancada'
+  | 'paga'
+  | 'cancelada'
+  | 'abriu_chamado';
 
 export interface Requisition {
   id: string;
@@ -19,14 +31,18 @@ export interface Requisition {
   descricao: string;
   local: string;
   fornecedor: string;
-  status: 'pendente' | 'entregue' | 'aguardando_lancamento';
+
+  status: RequisitionStatus;
+
   notaFiscal?: string;
   oc?: string;
   dataEmissao?: string;
   valorNF?: number;
+
   userId: string;
   createdAt: string;
   updatedAt: string;
+
   dataEnvio?: string;
   usuarioEnvio?: string;
 }
@@ -43,7 +59,13 @@ export interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  register: (name: string, email: string, password: string, ut: string) => Promise<boolean>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    ut: string
+  ) => Promise<boolean>;
+
   isAuthenticated: boolean;
   isAdmin: boolean;
   isViewer: boolean;

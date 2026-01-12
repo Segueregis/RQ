@@ -20,7 +20,7 @@ O perfil "visualizador" foi implementado com sucesso no sistema de requisições
 - **Arquivo**: `src/pages/Home.tsx` - linha 44-52
 - **Código**: `{!isViewer && <button>...</button>}`
 
-### ✅ **Regra 4: Não pode editar, marcar como entregue, excluir**
+
 - **Implementado**: Todos os botões de ação ocultos para visualizadores
 - **Arquivos**: 
   - `src/pages/RequisitionDetail.tsx` - linhas 158, 200, 250, 300, 350, 400, 450, 500, 550
@@ -104,7 +104,6 @@ VALUES (
 - ✅ Acessar detalhes de qualquer requisição
 - ❌ Não deve ver botão "Criar nova RQ"
 - ❌ Não deve ver botões de edição
-- ❌ Não deve ver botão "Marcar como Entregue"
 - ❌ Não deve ver botão "Excluir"
 
 ## 🚀 Próximos Passos

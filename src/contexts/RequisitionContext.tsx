@@ -1,14 +1,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Requisition } from '../types';
-import { createRequisition, getRequisitions, updateRequisition as updateRequisitionAPI, getRequisitionById, deleteRequisition } from '../lib/requisitions';
+import {
+  createRequisition,
+  getRequisitions,
+  updateRequisition as updateRequisitionAPI,
+  getRequisitionById,
+  deleteRequisition
+} from '../lib/requisitions';
 import { useAuth } from './AuthContext';
 
 interface RequisitionContextType {
   requisitions: Requisition[];
-  addRequisition: (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  addRequisition: (
+    requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>
+  ) => Promise<void>;
   updateRequisition: (id: string, updates: Partial<Requisition>) => Promise<void>;
   getRequisition: (id: string) => Promise<Requisition | null>;
-  markAsDelivered: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
   launchToFinance: (id: string, notaFiscal?: string, oc?: string) => Promise<void>;
   deleteRequisition: (id: string) => Promise<void>;
 }
@@ -39,13 +46,15 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
 
   const loadRequisitions = async () => {
     if (!currentUser) return;
-    
-    const userId = (isAdmin || isViewer) ? undefined : currentUser.id;
+
+    const userId = isAdmin || isViewer ? undefined : currentUser.id;
     const reqs = await getRequisitions(userId);
     setRequisitions(reqs);
   };
 
-  const addRequisition = async (requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addRequisition = async (
+    requisition: Omit<Requisition, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
     if (!currentUser || isViewer) return;
 
     const newRequisition = await createRequisition({
@@ -60,7 +69,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
 
   const updateRequisition = async (id: string, updates: Partial<Requisition>) => {
     if (isViewer) return;
-    
+
     const success = await updateRequisitionAPI(id, updates);
     if (success) {
       await loadRequisitions();
@@ -71,19 +80,9 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     return await getRequisitionById(id);
   };
 
-  const markAsDelivered = async (id: string, notaFiscal?: string, oc?: string) => {
-    if (isViewer) return;
-    
-    await updateRequisition(id, {
-      status: 'entregue',
-      notaFiscal,
-      oc
-    });
-  };
-
   const launchToFinance = async (id: string, notaFiscal?: string, oc?: string) => {
     if (isViewer) return;
-    
+
     await updateRequisition(id, {
       status: 'aguardando_lancamento',
       notaFiscal,
@@ -93,7 +92,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
 
   const deleteRequisitionHandler = async (id: string) => {
     if (isViewer) return;
-    
+
     const success = await deleteRequisition(id);
     if (success) {
       await loadRequisitions();
@@ -105,7 +104,6 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     addRequisition,
     updateRequisition,
     getRequisition,
-    markAsDelivered,
     launchToFinance,
     deleteRequisition: deleteRequisitionHandler
   };

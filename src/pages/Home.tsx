@@ -10,7 +10,10 @@ import { utsList } from '../data/uts';
 const Home: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pendente' | 'entregue' | 'aguardando_lancamento'>('all');
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'pendente' | 'aguardando_lancamento'
+  >('all');
+
   const { requisitions } = useRequisitions();
   const { currentUser, isViewer, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -22,17 +25,25 @@ const Home: React.FC = () => {
 
   const filteredRequisitions = useMemo(() => {
     return requisitions.filter(req => {
-      // Visualizadores e admins veem todas as requisições exceto as aguardando lancamento
-      // Usuários normais veem apenas suas próprias requisições exceto as aguardando lancamento
-      const matchesUser = isViewer || isAdmin || req.userId === currentUser?.id;
-      const notInFinance = req.status !== 'aguardando_lancamento';
-      const matchesSearch = !searchTerm || 
+      // Admin e Viewer veem tudo
+      // Usuário comum vê apenas as próprias
+      const matchesUser =
+        isAdmin || isViewer || req.userId === currentUser?.id;
+
+      // Home NÃO exibe itens que já estão no financeiro
+      const notInFinance =
+        req.status === 'pendente';
+
+      const matchesSearch =
+        !searchTerm ||
         req.rq.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getUTDescription(req.ut).toLowerCase().includes(searchTerm.toLowerCase()) ||
         req.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (req.oc && req.oc.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = filterStatus === 'all' || req.status === filterStatus;
-      
+
+      const matchesStatus =
+        filterStatus === 'all' || req.status === filterStatus;
+
       return matchesUser && notInFinance && matchesSearch && matchesStatus;
     });
   }, [requisitions, currentUser, isViewer, isAdmin, searchTerm, filterStatus]);
@@ -48,21 +59,41 @@ const Home: React.FC = () => {
     }).format(value);
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pendente':
+        return 'Pendente';
+      case 'aguardando_lancamento':
+        return 'Aguardando Lançamento';
+      case 'abriu_chamado':
+        return 'Abriu Chamado';
+      case 'lancada':
+        return 'Lançada';
+        case 'lancada':
+        return 'Lançada';
+      case 'paga':
+        return 'Paga';
+      case 'cancelada':
+        return 'Cancelada';
+      default:
+        return status;
+    }
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Requisições</h1>
+
           {!isViewer && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                <Plus className="h-5 w-5" />
-                <span>Criar nova RQ</span>
-              </button>
-            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+              <span>Criar nova RQ</span>
+            </button>
           )}
         </div>
 
@@ -76,24 +107,25 @@ const Home: React.FC = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Buscar por RQ, OC ou Descrição..."
+                  placeholder="Buscar por RQ, OC, UT ou descrição..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
+
             <div className="flex items-center space-x-2">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as 'all' | 'pendente' | 'entregue' | 'aguardando_lancamento')}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) =>
+                  setFilterStatus(e.target.value as 'all' | 'pendente' | 'aguardando_lancamento')
+                }
+                className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Todos os Status</option>
                 <option value="pendente">Pendente</option>
-                <option value="entregue">Entregue</option>
-                <option value="aguardando_lancamento">Aguardando Lançamento</option>
               </select>
             </div>
           </div>
@@ -105,72 +137,39 @@ const Home: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    RQ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor RQ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Descrição
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Local
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fornecedor
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">RQ</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor RQ</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Local</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fornecedor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredRequisitions.map((req) => (
+
+              <tbody className="divide-y divide-gray-200">
+                {filteredRequisitions.map(req => (
                   <tr
                     key={req.id}
                     onClick={() => handleRowClick(req.id)}
-                    className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                      req.status === 'entregue' ? 'bg-green-50' : ''
-                    }`}
+                    className="cursor-pointer hover:bg-gray-50"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {req.rq}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(req.valorTotal)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                      {req.descricao}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {req.local}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {req.fornecedor}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          req.status === 'entregue'
-                            ? 'bg-green-100 text-green-800'
-                            : req.status === 'aguardando_lancamento'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {req.status === 'entregue' ? 'Entregue' : 
-                         req.status === 'aguardando_lancamento' ? 'Aguardando Lançamento' : 'Pendente'}
-                      </span>
+                    <td className="px-6 py-4 font-medium">{req.rq}</td>
+                    <td className="px-6 py-4">{formatCurrency(req.valorTotal)}</td>
+                    <td className="px-6 py-4 max-w-xs truncate">{req.descricao}</td>
+                    <td className="px-6 py-4">{req.local}</td>
+                    <td className="px-6 py-4">{req.fornecedor}</td>
+                    <td className="px-6 py-4">
+                      {getStatusLabel(req.status)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
           {filteredRequisitions.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">Nenhuma requisição encontrada.</p>
+            <div className="text-center py-12 text-gray-500">
+              Nenhuma requisição encontrada.
             </div>
           )}
         </div>
