@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, DollarSign, Filter } from 'lucide-react';
+import { Search, DollarSign, Filter, X } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useRequisitions } from '../contexts/RequisitionContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,9 +11,8 @@ const Finance: React.FC = () => {
     'all' | 'aguardando_lancamento' | 'lancada' | 'paga' | 'cancelada' | 'abriu_chamado'
   >('aguardando_lancamento');
 
-  const { requisitions, getRequisition, updateRequisition } = useRequisitions();
+  const { requisitions, getRequisition, updateRequisition, deleteRequisition } = useRequisitions();
   const { isViewer, isAdmin } = useAuth();
-  const navigate = useNavigate();
 
   const [selectedReq, setSelectedReq] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -23,7 +21,8 @@ const Finance: React.FC = () => {
     dataEmissao: '',
     valorNF: 0,
     oc: '',
-    ut: ''
+    ut: '',
+    status: '' as any
   });
 
   const getUTDescription = (utId: string) => {
@@ -64,7 +63,8 @@ const Finance: React.FC = () => {
         dataEmissao: req.dataEmissao || '',
         valorNF: req.valorNF || 0,
         oc: req.oc || '',
-        ut: req.ut || ''
+        ut: req.ut || '',
+        status: req.status
       });
       setIsEditing(false);
     }
@@ -93,7 +93,7 @@ const Finance: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'aguardando_lancamento': return 'bg-blue-100 text-blue-800';
-      case 'lancada': return 'bg-green-100 text-green-800';
+      case 'lancada': return 'bg-yellow-100 text-yellow-800'; // cor amarela
       case 'paga': return 'bg-green-200 text-green-900';
       case 'cancelada': return 'bg-red-100 text-red-800';
       case 'abriu_chamado': return 'bg-red-200 text-red-900';
@@ -108,10 +108,18 @@ const Finance: React.FC = () => {
         dataEmissao: editData.dataEmissao,
         valorNF: Number(editData.valorNF),
         oc: editData.oc,
-        ut: editData.ut
+        ut: editData.ut,
+        status: editData.status
       });
       setSelectedReq({ ...selectedReq, ...editData });
       setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedReq && window.confirm('Tem certeza que deseja excluir esta requisição?')) {
+      await deleteRequisition(selectedReq.id);
+      setSelectedReq(null);
     }
   };
 
@@ -203,122 +211,152 @@ const Finance: React.FC = () => {
           )}
         </div>
 
-        {/* Formulário do Financeiro */}
+        {/* Modal do Financeiro */}
         {selectedReq && (
-          <div className="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200">
-            <h2 className="text-lg font-medium text-blue-800 mb-4">Detalhes Financeiro</h2>
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
+            <div className="bg-blue-50 p-6 rounded-lg shadow-lg border border-blue-200 w-full max-w-2xl relative">
+              <button
+                onClick={() => setSelectedReq(null)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* NF */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">NF</label>
+              <h2 className="text-lg font-medium text-blue-800 mb-4">Detalhes Financeiro</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* NF */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">NF</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.notaFiscal}
+                      onChange={(e) => setEditData({ ...editData, notaFiscal: e.target.value })}
+                      className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.notaFiscal || '-'}</p>
+                  )}
+                </div>
+
+                {/* DATA EMISSÃO */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">DATA EMISSÃO</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={editData.dataEmissao}
+                      onChange={(e) => setEditData({ ...editData, dataEmissao: e.target.value })}
+                      className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.dataEmissao || '-'}</p>
+                  )}
+                </div>
+
+                {/* VALOR NF */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">VALOR NF</label>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editData.valorNF}
+                      onChange={(e) => setEditData({ ...editData, valorNF: Number(e.target.value) })}
+                      className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{formatCurrency(selectedReq.valorNF)}</p>
+                  )}
+                </div>
+
+                {/* OC */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">OC</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editData.oc}
+                      onChange={(e) => setEditData({ ...editData, oc: e.target.value })}
+                      className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.oc || '-'}</p>
+                  )}
+                </div>
+
+                {/* UT */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">UT</label>
+                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{getUTDescription(selectedReq.ut)}</p>
+                </div>
+
+                {/* FORNECEDOR */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">FORNECEDOR</label>
+                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.fornecedor || '-'}</p>
+                </div>
+
+                {/* STATUS */}
+                <div>
+                  <label className="block text-sm font-medium text-blue-800 mb-1">STATUS</label>
+                  {isEditing ? (
+                    <select
+                      value={editData.status}
+                      onChange={(e) => setEditData({ ...editData, status: e.target.value })}
+                      className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="aguardando_lancamento">Aguardando Lançamento</option>
+                      <option value="lancada">Lançada</option>
+                      <option value="paga">Paga</option>
+                      <option value="cancelada">Cancelada</option>
+                      <option value="abriu_chamado">Abriu Chamado</option>
+                    </select>
+                  ) : (
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedReq.status)}`}>
+                      {getStatusLabel(selectedReq.status)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="mt-6 flex space-x-3">
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editData.notaFiscal}
-                    onChange={(e) => setEditData({ ...editData, notaFiscal: e.target.value })}
-                    className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    >
+                      Salvar
+                    </button>
+                  </>
                 ) : (
-                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.notaFiscal || '-'}</p>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    Editar Financeiro
+                  </button>
                 )}
-              </div>
 
-              {/* DATA EMISSÃO */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">DATA EMISSÃO</label>
-                {isEditing ? (
-                  <input
-                    type="date"
-                    value={editData.dataEmissao}
-                    onChange={(e) => setEditData({ ...editData, dataEmissao: e.target.value })}
-                    className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.dataEmissao || '-'}</p>
+                {isAdmin && (
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700"
+                  >
+                    Excluir
+                  </button>
                 )}
-              </div>
-
-              {/* VALOR NF */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">VALOR NF</label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editData.valorNF}
-                    onChange={(e) => setEditData({ ...editData, valorNF: Number(e.target.value) })}
-                    className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{formatCurrency(selectedReq.valorNF)}</p>
-                )}
-              </div>
-
-              {/* OC */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">OC</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editData.oc}
-                    onChange={(e) => setEditData({ ...editData, oc: e.target.value })}
-                    className="w-full px-3 py-2 border border-blue-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.oc || '-'}</p>
-                )}
-              </div>
-
-              {/* UT */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">UT</label>
-                <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{getUTDescription(selectedReq.ut)}</p>
-              </div>
-
-              {/* FORNECEDOR */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">FORNECEDOR</label>
-                <p className="text-sm text-blue-900 bg-blue-100 p-2 rounded">{selectedReq.fornecedor || '-'}</p>
-              </div>
-
-              {/* STATUS */}
-              <div>
-                <label className="block text-sm font-medium text-blue-800 mb-1">STATUS</label>
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedReq.status)}`}>
-                  {getStatusLabel(selectedReq.status)}
-                </span>
               </div>
             </div>
-
-            {/* Botões */}
-            {selectedReq.status === 'aguardando_lancamento' && !isEditing && (
-              <div className="mt-6 flex space-x-3">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  Editar Financeiro
-                </button>
-              </div>
-            )}
-
-            {isEditing && (
-              <div className="mt-6 flex space-x-3">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  Salvar
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>
