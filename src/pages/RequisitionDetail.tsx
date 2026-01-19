@@ -119,7 +119,13 @@ const RequisitionDetail: React.FC = () => {
     const errors = validateFinanceFields();
     setFinanceErrors(errors);
     if (errors.length === 0 && requisition) {
-      await launchToFinance(requisition.id, editData.notaFiscal, editData.oc);
+      await launchToFinance(requisition.id, {
+        notaFiscal: editData.notaFiscal,
+        oc: editData.oc,
+        dataEmissao: editData.dataEmissao,
+        valorNF: editData.valorNF,
+        fornecedor: editData.fornecedor
+      });
       setRequisition({
         ...requisition,
         status: 'aguardando_lancamento',
