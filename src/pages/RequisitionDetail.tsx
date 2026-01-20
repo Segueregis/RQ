@@ -12,7 +12,7 @@ const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getRequisition, updateRequisition, launchToFinance, deleteRequisition } = useRequisitions();
-  const { isAdmin, isViewer } = useAuth();
+  const { isAdmin, isViewer, isFinanceiro } = useAuth();
 
   const [requisition, setRequisition] = useState<Requisition | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -123,8 +123,9 @@ const RequisitionDetail: React.FC = () => {
       const fileName = `${requisition?.id}_nota_fiscal.${fileExt}`;
       const filePath = `notas-fiscais/${fileName}`;
 
+      console.log('Tentando upload para:', filePath);
       const { data, error } = await supabase.storage
-        .from('notas-fiscais')  // Assumindo bucket 'notas-fiscais'
+        .from('notas-fiscais')
         .upload(filePath, file);
 
       if (error) {
@@ -132,10 +133,12 @@ const RequisitionDetail: React.FC = () => {
         return null;
       }
 
+      console.log('Upload bem-sucedido:', data);
       const { data: { publicUrl } } = supabase.storage
         .from('notas-fiscais')
         .getPublicUrl(filePath);
 
+      console.log('URL pública:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Erro ao fazer upload:', error);
@@ -149,51 +152,17 @@ const RequisitionDetail: React.FC = () => {
     if (errors.length === 0 && requisition) {
       let notaFiscalPdfUrl: string | undefined;
       if (notaFiscalPDF) {
-                // ...existing code...
-          const handleLaunchToFinance = async () => {
-            const errors = validateFinanceFields();
-            setFinanceErrors(errors);
-            if (errors.length === 0 && requisition) {
-              let notaFiscalPdfUrl: string | undefined;
-              if (notaFiscalPDF) {
-                const url = await handleUploadNotaFiscalPDF(notaFiscalPDF);
-                if (url) {
-                  notaFiscalPdfUrl = url;
-                } else {
-                  console.warn('Falha no upload do PDF, mas continuando...');
-                }
-              }
-        
-              await launchToFinance(requisition.id, {
-                notaFiscal: editData.notaFiscal,
-                oc: editData.oc,
-                dataEmissao: editData.dataEmissao,
-                valorNF: editData.valorNF,
-                fornecedor: editData.fornecedor,
-                notaFiscalPdfUrl
-              });
-              setRequisition({
-                ...requisition,
-                status: 'aguardando_lancamento',
-                notaFiscal: editData.notaFiscal,
-                oc: editData.oc,
-                dataEmissao: editData.dataEmissao,
-                valorNF: editData.valorNF,
-                fornecedor: editData.fornecedor,
-                notaFiscalPdfUrl
-              });
-              setIsDeliveryEditing(false);
-              setFinanceErrors([]);
-              setNotaFiscalPDF(null);  // Limpar
-            }
-          };
-        // ...existing code... = await handleUploadNotaFiscalPDF(notaFiscalPDF);
-        if (!notaFiscalPdfUrl) {
-          // Opcional: mostrar erro, mas como é opcional, talvez continuar
+        console.log('Iniciando upload do PDF...');
+        const url = await handleUploadNotaFiscalPDF(notaFiscalPDF);
+        if (url) {
+          notaFiscalPdfUrl = url;
+          console.log('URL obtida:', url);
+        } else {
           console.warn('Falha no upload do PDF, mas continuando...');
         }
       }
 
+      console.log('Chamando launchToFinance com notaFiscalPdfUrl:', notaFiscalPdfUrl);
       await launchToFinance(requisition.id, {
         notaFiscal: editData.notaFiscal,
         oc: editData.oc,
@@ -362,6 +331,21 @@ const RequisitionDetail: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <p className={`text-sm p-2 rounded ${getStatusColor(requisition.status)}`}>{getStatusLabel(requisition.status)}</p>
             </div>
+
+            {/* Link para PDF da NF */}
+            {requisition.notaFiscalPdfUrl && (isAdmin || isFinanceiro) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PDF da Nota Fiscal</label>
+                <a 
+                  href={requisition.notaFiscalPdfUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Visualizar PDF
+                </a>
+              </div>
+            )}
 
             {/* Botão Lançar para Financeiro */}
             {requisition.status === 'pendente' && !isEditing && !isViewer && !isDeliveryEditing && (
