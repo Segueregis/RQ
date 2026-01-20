@@ -38,6 +38,7 @@ export interface Requisition {
   oc?: string;
   dataEmissao?: string;
   valorNF?: number;
+  notaFiscalPdfUrl?: string;  // Adicionado
 
   userId: string;
   createdAt: string;

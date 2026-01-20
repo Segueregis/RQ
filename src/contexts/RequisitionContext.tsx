@@ -16,7 +16,7 @@ interface RequisitionContextType {
   ) => Promise<void>;
   updateRequisition: (id: string, updates: Partial<Requisition>) => Promise<void>;
   getRequisition: (id: string) => Promise<Requisition | null>;
-  launchToFinance: (id: string, financeData: { notaFiscal: string; oc: string; dataEmissao: string; valorNF: number; fornecedor: string }) => Promise<void>;
+  launchToFinance: (id: string, financeData: { notaFiscal: string; oc: string; dataEmissao: string; valorNF: number; fornecedor: string; notaFiscalPdfUrl?: string }) => Promise<void>;  // Modificado
   deleteRequisition: (id: string) => Promise<void>;
 }
 
@@ -80,7 +80,7 @@ export const RequisitionProvider: React.FC<RequisitionProviderProps> = ({ childr
     return await getRequisitionById(id);
   };
 
-  const launchToFinance = async (id: string, financeData: { notaFiscal: string; oc: string; dataEmissao: string; valorNF: number; fornecedor: string }) => {
+  const launchToFinance = async (id: string, financeData: { notaFiscal: string; oc: string; dataEmissao: string; valorNF: number; fornecedor: string; notaFiscalPdfUrl?: string }) => {  // Modificado
     if (isViewer) return;
 
     await updateRequisition(id, {

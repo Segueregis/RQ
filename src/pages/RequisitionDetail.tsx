@@ -6,6 +6,7 @@ import { useRequisitions } from '../contexts/RequisitionContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Requisition } from '../types';
 import { utsList } from '../data/uts';
+import { supabase } from '../lib/supabase';  // Adicionado
 
 const RequisitionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +37,7 @@ const RequisitionDetail: React.FC = () => {
     usuarioEnvio: ''
   });
   const [financeErrors, setFinanceErrors] = useState<string[]>([]);
+  const [notaFiscalPDF, setNotaFiscalPDF] = useState<File | null>(null);  // Adicionado
 
   useEffect(() => {
     const loadRequisition = async () => {
@@ -115,16 +117,90 @@ const RequisitionDetail: React.FC = () => {
     }
   };
 
+  const handleUploadNotaFiscalPDF = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${requisition?.id}_nota_fiscal.${fileExt}`;
+      const filePath = `notas-fiscais/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('notas-fiscais')  // Assumindo bucket 'notas-fiscais'
+        .upload(filePath, file);
+
+      if (error) {
+        console.error('Erro ao fazer upload do PDF:', error);
+        return null;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('notas-fiscais')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      return null;
+    }
+  };
+
   const handleLaunchToFinance = async () => {
     const errors = validateFinanceFields();
     setFinanceErrors(errors);
     if (errors.length === 0 && requisition) {
+      let notaFiscalPdfUrl: string | undefined;
+      if (notaFiscalPDF) {
+                // ...existing code...
+          const handleLaunchToFinance = async () => {
+            const errors = validateFinanceFields();
+            setFinanceErrors(errors);
+            if (errors.length === 0 && requisition) {
+              let notaFiscalPdfUrl: string | undefined;
+              if (notaFiscalPDF) {
+                const url = await handleUploadNotaFiscalPDF(notaFiscalPDF);
+                if (url) {
+                  notaFiscalPdfUrl = url;
+                } else {
+                  console.warn('Falha no upload do PDF, mas continuando...');
+                }
+              }
+        
+              await launchToFinance(requisition.id, {
+                notaFiscal: editData.notaFiscal,
+                oc: editData.oc,
+                dataEmissao: editData.dataEmissao,
+                valorNF: editData.valorNF,
+                fornecedor: editData.fornecedor,
+                notaFiscalPdfUrl
+              });
+              setRequisition({
+                ...requisition,
+                status: 'aguardando_lancamento',
+                notaFiscal: editData.notaFiscal,
+                oc: editData.oc,
+                dataEmissao: editData.dataEmissao,
+                valorNF: editData.valorNF,
+                fornecedor: editData.fornecedor,
+                notaFiscalPdfUrl
+              });
+              setIsDeliveryEditing(false);
+              setFinanceErrors([]);
+              setNotaFiscalPDF(null);  // Limpar
+            }
+          };
+        // ...existing code... = await handleUploadNotaFiscalPDF(notaFiscalPDF);
+        if (!notaFiscalPdfUrl) {
+          // Opcional: mostrar erro, mas como é opcional, talvez continuar
+          console.warn('Falha no upload do PDF, mas continuando...');
+        }
+      }
+
       await launchToFinance(requisition.id, {
         notaFiscal: editData.notaFiscal,
         oc: editData.oc,
         dataEmissao: editData.dataEmissao,
         valorNF: editData.valorNF,
-        fornecedor: editData.fornecedor
+        fornecedor: editData.fornecedor,
+        notaFiscalPdfUrl
       });
       setRequisition({
         ...requisition,
@@ -133,10 +209,12 @@ const RequisitionDetail: React.FC = () => {
         oc: editData.oc,
         dataEmissao: editData.dataEmissao,
         valorNF: editData.valorNF,
-        fornecedor: editData.fornecedor
+        fornecedor: editData.fornecedor,
+        notaFiscalPdfUrl
       });
       setIsDeliveryEditing(false);
       setFinanceErrors([]);
+      setNotaFiscalPDF(null);  // Limpar
     }
   };
 
@@ -323,6 +401,17 @@ const RequisitionDetail: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">VALOR DA NF</label>
                     <input type="number" step="0.01" value={editData.valorNF || ''} onChange={e => setEditData({...editData, valorNF: Number(e.target.value)})} className="w-full px-3 py-2 border rounded-md" />
+                  </div>
+                  {/* Importar PDF NF */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Importar PDF (NF)</label>
+                    <input 
+                      type="file" 
+                      accept=".pdf" 
+                      onChange={(e) => setNotaFiscalPDF(e.target.files?.[0] || null)} 
+                      className="w-full px-3 py-2 border rounded-md" 
+                    />
+                    {notaFiscalPDF && <p className="text-sm text-gray-600 mt-1">{notaFiscalPDF.name}</p>}
                   </div>
                 </div>
 

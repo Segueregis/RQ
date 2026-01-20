@@ -17,6 +17,7 @@ export const createRequisition = async (requisitionData: Omit<Requisition, 'id' 
         oc: requisitionData.oc,
         data_emissao: requisitionData.dataEmissao,
         valor_nf: requisitionData.valorNF,
+        nota_fiscal_pdf_url: requisitionData.notaFiscalPdfUrl,  // Adicionado
         user_id: requisitionData.userId,
         data_envio: requisitionData.dataEnvio,
         usuario_envio: requisitionData.usuarioEnvio
@@ -42,6 +43,7 @@ export const createRequisition = async (requisitionData: Omit<Requisition, 'id' 
       oc: data.oc,
       dataEmissao: data.data_emissao,
       valorNF: data.valor_nf,
+      notaFiscalPdfUrl: data.nota_fiscal_pdf_url,  // Adicionado
       userId: data.user_id,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -113,6 +115,7 @@ export const updateRequisition = async (id: string, updates: Partial<Requisition
     if (updates.oc !== undefined) updateData.oc = updates.oc;
     if (updates.dataEmissao !== undefined) updateData.data_emissao = updates.dataEmissao;
     if (updates.valorNF !== undefined) updateData.valor_nf = updates.valorNF;
+    if (updates.notaFiscalPdfUrl !== undefined) updateData.nota_fiscal_pdf_url = updates.notaFiscalPdfUrl;  // Adicionado
     if (updates.dataEnvio !== undefined) updateData.data_envio = updates.dataEnvio;
     if (updates.usuarioEnvio !== undefined) updateData.usuario_envio = updates.usuarioEnvio;
 
@@ -160,7 +163,8 @@ export const getRequisitionById = async (id: string): Promise<Requisition | null
       .eq('id', id)
       .single();
 
-    if (error || !data) {
+    if (error) {
+      console.error('Erro ao buscar requisição:', error);
       return null;
     }
 
@@ -177,6 +181,7 @@ export const getRequisitionById = async (id: string): Promise<Requisition | null
       oc: data.oc,
       dataEmissao: data.data_emissao,
       valorNF: data.valor_nf,
+      notaFiscalPdfUrl: data.nota_fiscal_pdf_url,  // Adicionado
       userId: data.user_id,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
@@ -187,4 +192,4 @@ export const getRequisitionById = async (id: string): Promise<Requisition | null
     console.error('Erro ao buscar requisição:', error);
     return null;
   }
-}; 
+};
